@@ -9,6 +9,7 @@ dependencies = [
     "dbt-core>=1.11.7",
     "dbt-postgres>=1.10.0",
     "python-dotenv>=1.2.2",
+    "requests>=2.32.5",
 ]
 requires-python = ">=3.10"
 authors = [
@@ -37,6 +38,7 @@ Changelog = "https://github.com/shsiddhant/womens-wc/blob/main/CHANGELOG.md"
 dev = [
     "dbt-core>=1.11.7",
     "dbt-postgres>=1.10.0",
+    "ipython>=8.38.0",
     "mypy>=1.18.2",
     "pandas-stubs>=2.3.3.260113",
     "pre-commit>=4.3.0",
