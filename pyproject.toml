@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools >= 80.0.0", "setuptools_scm>=8.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cricket-warehouse"
+dynamic = ["version"]
+dependencies = [
+    "dbt-core>=1.11.7",
+    "dbt-postgres>=1.10.0",
+    "python-dotenv>=1.2.2",
+]
+requires-python = ">=3.10"
+authors = [
+	{name="Siddhant Sharma", email="sharmasiddhant@protonmail.com" },
+]
+description = "Build a cricket data warehouse for analytics."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = []
+
+
+[tool.setuptools_scm]
+local_scheme="no-local-version"
+fallback_version = "0.0.0"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.urls]
+Repository = "https://github.com/shsiddhant/womens-wc"
+Issues = "https://github.com/shsiddhant/womens-wc/issues"
+Changelog = "https://github.com/shsiddhant/womens-wc/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+    "dbt-core>=1.11.7",
+    "dbt-postgres>=1.10.0",
+    "mypy>=1.18.2",
+    "pandas-stubs>=2.3.3.260113",
+    "pre-commit>=4.3.0",
+    "pytest>=8.4.2",
+    "ruff>=0.14.0",
+    "types-psycopg2>=2.9.21.20251012",
+]

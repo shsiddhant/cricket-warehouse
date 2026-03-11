@@ -1,0 +1,28 @@
+
+name: 'cricket_warehouse'
+version: '1.0.0'
+
+# This setting configures which "profile" dbt uses for this project.
+profile: 'cricket_warehouse'
+
+# schema: cricket
+
+model-paths: ["models"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:         # directories to be removed by `dbt clean`
+  - "target"
+  - "dbt_packages"
+
+
+models:
+  cricket_warehouse:
+    # Config indicated by + and applies to all files under models/example/
+    staging:
+      +materialized: incremental
+    intermediate:
+      +materialized: incremental
+    marts:
+      +materialized: incremental
