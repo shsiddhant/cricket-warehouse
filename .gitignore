@@ -43,7 +43,7 @@ data/raw/
 config/.env
 
 # dbt
-*/target/
-*/dbt_packages/
+target/
+dbt_packages/
 */logs/
 logs/
