@@ -167,3 +167,27 @@ def update_venue_city_seed(
         raise Exit(2)
     except Exception:
         raise
+
+def update_city_country_seed(
+    venue_city_seed: Path,
+    city_country_seed: Path,
+    ):
+    """
+    Update city country seed.
+    """
+    with open(venue_city_seed, "r") as file:
+        reader = csv.reader(file)
+        cities = {
+            row[1] for row in reader
+            if row[1] and row[1] != "city"
+        }
+    with open(city_country_seed, "+a") as file:
+        reader = csv.reader(file)
+        cities_current = {
+            row[1] for row in reader
+            if row[1] and row[1] != "city"
+        }
+        cities_new = cities.difference(cities_current)
+        city_country = [(city, "null") for city in cities_new]
+        writer = csv.writer(file)
+        writer.writerows(city_country)

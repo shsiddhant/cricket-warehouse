@@ -4,3 +4,8 @@ seeds:
       column_types:
         venue_name: text
         city: text
+  - name: city_country
+    config:
+      column_types:
+        city: text
+        country: text

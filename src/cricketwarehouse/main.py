@@ -7,9 +7,14 @@ from cricketwarehouse.cli_util import (
     download_ui,
     ingest,
     init_source,
-    update_venue_city_seed
+    update_venue_city_seed,
+    update_city_country_seed,
 )
-from cricketwarehouse import JSON_FILES_DIR, RAW_DATA_SCHEMA
+from cricketwarehouse import (
+    JSON_FILES_DIR,
+    RAW_DATA_SCHEMA,
+    SEEDS_DIR,
+)
 
 from pathlib import Path  # noqa: TC003
 
@@ -31,19 +36,25 @@ def download(
 
 @app.command("init")
 def init(
-    seed: Annotated[
-        Optional[Path], typer.Option(help="Path to venue city CSV.")
-        ],
+    seeds: Annotated[
+        Optional[bool], typer.Option(help="Initalize seeds.")
+        ] = False
     ):
     """
-    Initialize source tables and venue city seed.
+    Initialize source tables and seeds.
     """
     init_source()
     print("Source tables initialized.")
-    if seed:
-        with open(seed, "w") as file:
+    venue_city = SEEDS_DIR / "venue_city.csv"
+    city_country = SEEDS_DIR / "city_country.csv"
+    if seeds:
+        with open(venue_city, "w") as file:
             file.write("venue_name,city\n")
-        print("Initialized venue city seed.")
+        print("\nInitialized venue city seed.")
+
+        with open(city_country, "w") as file:
+            file.write("city,country\n")
+        print("\nInitialized city country seed.")
 
 @app.command("ingest")
 def ingest_files(
@@ -63,14 +74,20 @@ def ingest_files(
 
 @app.command("update")
 def update_venue_city(
-    seed: Annotated[
-        Path, typer.Argument(help="Path to directory containing JSON files")
-        ],
+    seeds: Annotated[
+        Optional[bool], typer.Option(help="Initalize seeds.")
+        ] = False
     ):
     """
     Update venue city seed.
     """
-    update_venue_city_seed(seed)
+    if seeds:
+        venue_city_seed = SEEDS_DIR / "venue_city.csv"
+        city_country_seed = SEEDS_DIR / "city_country.csv"
+        update_venue_city_seed(venue_city_seed)
+        print("\nUpdated venue city seed.")
+        update_city_country_seed(venue_city_seed, city_country_seed)
+        print("\nUpdated city country seed.")
 
 if __name__ == "__main__":
     app()
