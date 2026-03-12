@@ -8,6 +8,7 @@ dynamic = ["version"]
 dependencies = [
     "dbt-core>=1.11.7",
     "dbt-postgres>=1.10.0",
+    "psycopg2>=2.9.11",
     "python-dotenv>=1.2.2",
     "requests>=2.32.5",
     "typer>=0.24.1",
