@@ -1,9 +1,10 @@
 from __future__ import annotations
-#from typing import TYPE_CHECKING
+from typing import Optional
 from typing_extensions import Annotated
 import typer
 
-from cricketwarehouse.util import download_ui
+from cricketwarehouse.cli_util import download_ui, ingest, init_source
+from cricketwarehouse import JSON_FILES_DIR, RAW_DATA_SCHEMA
 
 from pathlib import Path  # noqa: TC003
 
@@ -12,12 +13,40 @@ app = typer.Typer(name="cricketwarehouse")
 @app.command("download")
 def download(
     url: Annotated[str, typer.Argument(help="Cricsheet url")],
-    filepath: Annotated[Path, typer.Argument(help="Path to downloaded file.")],
-):
+    filepath: Annotated[Path, typer.Argument(help="Path to downloaded file")],
+    extaction_dir: Annotated[
+        Optional[Path], typer.Option(help="Path to extaction directory")
+        ] = JSON_FILES_DIR
+    ):
     """
     Download data from Cricsheet.
     """
-    download_ui(url, filepath)
+    if extaction_dir is not None:
+        download_ui(url, filepath, output_dir=extaction_dir)
+
+@app.command("init")
+def init():
+    """
+    Initialize source tables.
+    """
+    init_source()
+    print("Source tables initialized.")
+
+@app.command("ingest")
+def ingest_files(
+    json_files_path: Annotated[
+        Path, typer.Argument(help="Path to directory containing JSON files")
+        ],
+    schema: Annotated[
+        Optional[str], typer.Option(help="Schema for source tables")
+        ] = RAW_DATA_SCHEMA
+    ):
+    """
+    Ingest JSON files into source tables.
+    """
+    json_files_list = list(json_files_path.glob("*.json"))
+    if schema is not None:
+        ingest(json_files_list, schema, json_table_name="matches_json")
 
 if __name__ == "__main__":
     app()
