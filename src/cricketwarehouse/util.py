@@ -1,56 +1,37 @@
 from __future__ import annotations
-from rich.progress import Progress
 from typing import TYPE_CHECKING
-from requests import HTTPError
-from typer import Exit
 import hashlib
 import psycopg2
+import os
+from dotenv import load_dotenv
 
-from cricketwarehouse import RAW_DATA_SCHEMA
-from cricketwarehouse.download_cricsheet import download_from_url
+from cricketwarehouse import (
+    CONFIG_DIR,
+    RAW_DATA_SCHEMA,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 
-def download_ui(url: str, filepath: str | Path):
-    try:
-        with Progress() as progress:
-            download_task = progress.add_task("Downloading file...", total=None)
-
-            def callback(
-                downloaded_size: int,
-                total_size: int
-            ) -> None:
-                status_text = (
-                    f"Downloaded {(downloaded_size/1024):.2f} KiB out of "
-                    f"{(total_size/1024):.2f} KiB"
-                )
-                progress.update(
-                    download_task, total=total_size, completed=downloaded_size,
-                    description=status_text, refresh=True
-                )
-            download_from_url(url, filepath, chunk_size=65536, callback=callback)
-
-    except HTTPError as e:
-        print("Error: ", e.args[0]["message"])
-        raise Exit(e.args[0]["error"])
-
-
-def get_file_hash(filepath: str | Path, hash_method: str = "md5"):
-    """
-    Get file content hash.
-    """
-    with open(filepath, "rb") as file:
-        digest = hashlib.file_digest(file, hash_method)
-        file_hash = digest.hexdigest()
-    return file_hash
+def connect_db() -> psycopg2.extensions.connection:
+    conn = None
+    # Load Environment
+    load_dotenv(CONFIG_DIR / ".env")
+    # Connect to DB
+    conn = psycopg2.connect(
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASS"),
+        host=os.getenv("DB_HOST")
+        )
+    return conn
 
 def init_db(
     conn: psycopg2.extensions.connection,
     schema: str = RAW_DATA_SCHEMA,
-    incremental: bool = False,
-):
+    json_table_name: str = "matches_json"
+    ):
     drop_schema_sql = f"""
         DROP SCHEMA IF EXISTS {schema} CASCADE;
         CREATE SCHEMA {schema};
@@ -63,7 +44,7 @@ def init_db(
             UNIQUE (filename),
             PRIMARY KEY (id)
         );
-        CREATE TABLE {schema}.matches_json (
+        CREATE TABLE {schema}.{json_table_name} (
             id SERIAL,
             data JSONB,
             PRIMARY KEY (id)
@@ -78,10 +59,21 @@ def init_db(
             delivery JSONB
         );
         """
-    if not incremental:
+    try:
         with conn.cursor() as cur:
             cur.execute(drop_schema_sql)
             cur.execute(create_tables)
+    except psycopg2.Error as e:
+        raise psycopg2.Error from e
+
+def get_file_hash(filepath: str | Path, hash_method: str = "md5"):
+    """
+    Get file content hash.
+    """
+    with open(filepath, "rb") as file:
+        digest = hashlib.file_digest(file, hash_method)
+        file_hash = digest.hexdigest()
+    return file_hash
 
 def update_files_list(
     conn: psycopg2.extensions.connection,
@@ -89,6 +81,7 @@ def update_files_list(
     schema: str = RAW_DATA_SCHEMA
     ):
     """
+    Update JSON files table.
     """
     current_files_list = get_current_files(conn, schema)
     insert_new_file = f"""
@@ -110,6 +103,9 @@ def get_current_files(
     conn: psycopg2.extensions.connection,
     schema: str = RAW_DATA_SCHEMA
     ):
+    """
+    Get currently ingested files.
+    """
     select_files_sql = f"""
         SELECT
             file_hash
@@ -124,9 +120,14 @@ def check_file_hash_present(
     current_files_list: list[tuple[str]],
     filepath: Path,
     ):
+    """
+    Check if file hash is present in current JSON files table.
+    """
     file_hash = get_file_hash(filepath)
     if (file_hash,) not in current_files_list:
         return file_hash
     else:
         return None
+
+
 

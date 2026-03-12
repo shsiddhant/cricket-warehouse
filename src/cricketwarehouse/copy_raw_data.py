@@ -83,7 +83,6 @@ def copy_deliveries_json(
     for filepath in json_files_list:
         file_hash = check_file_hash_present(current_files_list, filepath)
         if file_hash is not None:
-            print(filepath.name)
             deliveries = json_explode(filepath, file_hash, deliveries)
     writer.writerows(deliveries)
     stdin.seek(0)
