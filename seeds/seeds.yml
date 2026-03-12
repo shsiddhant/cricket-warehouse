@@ -1,0 +1,6 @@
+seeds:
+  - name: venue_city
+    config:
+      column_types:
+        venue_name: text
+        city: text
