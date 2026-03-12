@@ -15,7 +15,7 @@ from pathlib import Path  # noqa: TC003
 
 app = typer.Typer(name="cricketwarehouse")
 
-@app.command("download")
+@app.command("fetch")
 def download(
     url: Annotated[str, typer.Argument(help="Cricsheet url")],
     filepath: Annotated[Path, typer.Argument(help="Path to downloaded file")],
@@ -24,18 +24,26 @@ def download(
         ] = JSON_FILES_DIR
     ):
     """
-    Download data from Cricsheet.
+    Fetch data from Cricsheet.
     """
     if extaction_dir is not None:
         download_ui(url, filepath, output_dir=extaction_dir)
 
 @app.command("init")
-def init():
+def init(
+    seed: Annotated[
+        Optional[Path], typer.Option(help="Path to venue city CSV.")
+        ],
+    ):
     """
-    Initialize source tables.
+    Initialize source tables and venue city seed.
     """
     init_source()
     print("Source tables initialized.")
+    if seed:
+        with open(seed, "w") as file:
+            file.write("venue_name,city\n")
+        print("Initialized venue city seed.")
 
 @app.command("ingest")
 def ingest_files(
@@ -53,28 +61,16 @@ def ingest_files(
     if schema is not None:
         ingest(json_files_list, schema, json_table_name="matches_json")
 
-@app.command("init-venue-city")
-def init_venue_city_seed(
-    venue_city_seed: Annotated[
-        Path, typer.Argument(help="Path to directory containing JSON files")
-        ],
-    ):
-    """
-    Initialize venue city seed.
-    """
-    with open(venue_city_seed, "w") as file:
-        file.write("venue_name,city\n")
-
-@app.command("update-venue-city")
+@app.command("update")
 def update_venue_city(
-    venue_city_seed: Annotated[
+    seed: Annotated[
         Path, typer.Argument(help="Path to directory containing JSON files")
         ],
     ):
     """
     Update venue city seed.
     """
-    update_venue_city_seed(venue_city_seed)
+    update_venue_city_seed(seed)
 
 if __name__ == "__main__":
     app()
