@@ -3,20 +3,20 @@ from typing import TYPE_CHECKING
 import json
 import io
 import csv
-import hashlib
 from pathlib import Path
 
 if TYPE_CHECKING:
     import psycopg2
 
 from cricketwarehouse import RAW_DATA_SCHEMA
-
+from cricketwarehouse.util import check_file_hash_present
 def copy_json_to_table(
     conn: psycopg2.extensions.connection,
-    json_files: list[Path],
+    json_files_list: list[Path],
+    current_files_list: list[tuple[str]],
     schema: str = RAW_DATA_SCHEMA,
     json_table_name: str = "matches_json",
-) -> None:
+    ) -> None:
     """
     Copy JSON files as JSONB rows in a temp table.
 
@@ -28,16 +28,18 @@ def copy_json_to_table(
         Name of the staging table to copy JSON data to.
 
     """
-    for match_json in json_files:
-        match_json = Path(match_json).resolve()
-        with open(match_json, "r") as file:
-            data = json.load(file)
-        data["match_id"] = int(match_json.name.removesuffix(".json"))
-        with conn.cursor() as cur:
-            cur.copy_expert(
-                f"COPY {schema}.{json_table_name} (data) FROM STDIN",
-                io.StringIO(json.dumps(data))
-            )
+    for filepath in json_files_list:
+        file_hash = check_file_hash_present(current_files_list, filepath)
+        if file_hash is not None:
+            filename = filepath.name
+            with open(filepath, "r") as file:
+                data = json.load(file)
+            data["match_id"] = int(filename.removesuffix(".json"))
+            with conn.cursor() as cur:
+                cur.copy_expert(
+                    f"COPY {schema}.{json_table_name} (data) FROM STDIN",
+                    io.StringIO(json.dumps(data))
+                )
 
 def json_explode(json_file_path, hash_id, deliveries=[]):
     with open(json_file_path, "rb") as file:
@@ -60,9 +62,9 @@ def json_explode(json_file_path, hash_id, deliveries=[]):
 
 def copy_deliveries_json(
     conn: psycopg2.extensions.connection,
-    json_files,
-    schema = "womenswc",
-    hash_method = "md5",
+    json_files_list: list[Path],
+    current_files_list: list[tuple[str]],
+    schema = RAW_DATA_SCHEMA
 ) -> None:
     """
     """
@@ -78,11 +80,11 @@ def copy_deliveries_json(
     deliveries = []
     stdin = io.StringIO()
     writer = csv.DictWriter(stdin, fieldnames=columns)
-    for match_json in json_files:
-        with open(match_json, "rb") as file:
-            digest = hashlib.file_digest(file, hash_method)
-            hash_id = digest.hexdigest()
-        deliveries = json_explode(match_json, hash_id, deliveries)
+    for filepath in json_files_list:
+        file_hash = check_file_hash_present(current_files_list, filepath)
+        if file_hash is not None:
+            print(filepath.name)
+            deliveries = json_explode(filepath, file_hash, deliveries)
     writer.writerows(deliveries)
     stdin.seek(0)
     with conn.cursor() as cur:
