@@ -10,6 +10,7 @@ dependencies = [
     "dbt-postgres>=1.10.0",
     "python-dotenv>=1.2.2",
     "requests>=2.32.5",
+    "typer>=0.24.1",
 ]
 requires-python = ">=3.10"
 authors = [
@@ -26,13 +27,11 @@ keywords = []
 local_scheme="no-local-version"
 fallback_version = "0.0.0"
 
+[project.scripts]
+cricketwarehouse = "cricketwarehouse.main:app"
+
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[project.urls]
-Repository = "https://github.com/shsiddhant/womens-wc"
-Issues = "https://github.com/shsiddhant/womens-wc/issues"
-Changelog = "https://github.com/shsiddhant/womens-wc/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
@@ -46,3 +45,9 @@ dev = [
     "ruff>=0.14.0",
     "types-psycopg2>=2.9.21.20251012",
 ]
+
+[project.urls]
+Repository = "https://github.com/shsiddhant/womens-wc"
+Issues = "https://github.com/shsiddhant/womens-wc/issues"
+Changelog = "https://github.com/shsiddhant/womens-wc/blob/main/CHANGELOG.md"
+
