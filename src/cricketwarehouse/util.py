@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 import hashlib
 import psycopg2
 import os
+import json
 from dotenv import load_dotenv
 
 from cricketwarehouse import (
@@ -57,6 +58,13 @@ def init_db(
             n_over INT,
             n_delivery INT,
             delivery JSONB
+        );
+        CREATE TABLE {schema}.src_venues (
+            id SERIAL,
+            venue_name TEXT,
+            city TEXT,
+            UNIQUE (venue_name),
+            PRIMARY KEY (id)
         );
         """
     try:
@@ -129,5 +137,35 @@ def check_file_hash_present(
     else:
         return None
 
+
+def update_src_venues(
+    conn: psycopg2.extensions.connection,
+    json_files_list: list[Path],
+    current_files_list: list[tuple[str]],
+    schema: str = RAW_DATA_SCHEMA,
+    ):
+    """
+    Update venues source table.
+    """
+    insert_new_venues = f"""
+        INSERT INTO {schema}.src_venues (venue_name, city)
+        VALUES (%s, %s)
+        ON CONFLICT DO NOTHING
+    """
+    for filepath in json_files_list:
+        file_hash = check_file_hash_present(current_files_list, filepath)
+        if file_hash is not None:
+            with open(filepath, "r") as file:
+                data = json.load(file)
+                venue_name = data["info"].get("venue")
+                city = data["info"].get("city")
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(insert_new_venues, (venue_name, city))
+            except psycopg2.Error as e:
+                conn.rollback()
+                raise psycopg2.Error(e)
+            else:
+                conn.commit()
 
 
