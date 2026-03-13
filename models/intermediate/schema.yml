@@ -78,3 +78,25 @@ models:
               - innings_number
               - over_number
               - ball_in_over
+
+  - name: int_innings
+    columns:
+      - name: match_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('int_matches')
+                field: 'match_id'
+
+      - name: innings_number
+        data_tests: [not_null]
+
+      - name: team
+        data_tests: [not_null]
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - match_id
+              - innings_number
