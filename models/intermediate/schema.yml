@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: int_venues
+    description: "Venues table."
+    columns:
+      - name: venue_id
+        description: "The primary key for this table"
+        data_tests:
+          - unique
+          - not_null
+      
+      - name: venue_name
+        data_tests: [not_null]
+      
+      - name: country
+        data_tests: [not_null]
+      
+      - name: last_update
+        data_tests: [not_null]
