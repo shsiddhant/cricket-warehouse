@@ -57,6 +57,7 @@ def init_db(
             team TEXT,
             n_over INT,
             n_delivery INT,
+            super_over BOOL,
             delivery JSONB
         );
         CREATE TABLE {schema}.src_venues (

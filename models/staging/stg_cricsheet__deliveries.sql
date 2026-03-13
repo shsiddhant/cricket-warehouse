@@ -26,6 +26,7 @@ deliveries_staging AS (
         team,
         n_over AS over_number,
         n_delivery AS ball_in_over,
+        super_over,
      
         COALESCE ((delivery->'runs'->'total')::integer, 0) AS runs,
         COALESCE ((delivery->'runs'->'batter')::integer, 0) AS batter_runs,
