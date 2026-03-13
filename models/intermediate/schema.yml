@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: int_venues
-    description: "Venues table."
+    description: "Venues Table"
     columns:
       - name: venue_id
         description: "The primary key for this table"
@@ -17,4 +17,31 @@ models:
         data_tests: [not_null]
       
       - name: last_update
+        data_tests: [not_null]
+
+  - name: int_matches
+    description: "Matches Table"
+    columns:
+      - name: match_id
+        description: "The primary key for this table"
+        data_tests:
+          - unique
+
+      - name: venue_id
+        tests:
+          - relationships:
+              arguments:
+                to: ref('int_venues')
+                field: 'venue_id'
+
+      - name: start_date
+        data_tests: [not_null]
+
+      - name: format
+        data_tests: [not_null]
+
+      - name: gender
+        data_tests: [not_null]
+
+      - name: outcome_type
         data_tests: [not_null]
