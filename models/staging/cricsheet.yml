@@ -1,0 +1,8 @@
+version: 1
+
+sources:
+  - name: cricsheet
+    schema: raw
+    tables:
+      - name: matches_json
+      - name: deliveries_json
