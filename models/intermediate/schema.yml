@@ -45,3 +45,36 @@ models:
 
       - name: outcome_type
         data_tests: [not_null]
+
+  - name: int_deliveries
+    columns:
+      - name: match_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('int_matches')
+                field: 'match_id'
+
+      - name: innings_number
+        data_tests: [not_null]
+
+      - name: over_number
+        data_tests: [not_null]
+
+      - name: ball_in_over
+        data_tests: [not_null]
+      
+      - name: batter
+        data_tests: [not_null]
+
+      - name: bowler
+        data_tests: [not_null]
+    
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - match_id
+              - innings_number
+              - over_number
+              - ball_in_over
