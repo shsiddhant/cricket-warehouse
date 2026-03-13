@@ -9,7 +9,7 @@ A data warehouse for ball-by-ball cricket match data, designed for analytics and
 
 The project ingests raw match JSON from [Cricsheet](ttps://cricsheet.org/), normalizes the data into relational tables in PostgreSQL, and builds analytical models using dbt.
 
-# Overview
+## Overview
 
 Cricsheet data is nested and complex. Each match file contains hierarchical JSON describing:
 
@@ -22,7 +22,7 @@ Cricsheet data is nested and complex. Each match file contains hierarchical JSON
 
 This project builds a reproducible data pipeline that transforms this raw data into a structured warehouse suitable for querying and analytics.
 
-## Pipeline stages:
+**Pipeline stages:**
 
 1. Fetch raw match data from Cricsheet.
 2. Ingest JSON files into normalized source tables
@@ -50,15 +50,15 @@ Raw dataset characteristics:
 ```mermaid
 flowchart TD
 
-A[**Cricsheet Match Data:** JSON ZIP] -->|Fetch| B[**Raw JSON Files**]
+A[Cricsheet Match Data: JSON ZIP] -->|Fetch| B[Raw JSON Files]
 
-B -->|Incremental Ingestion| C[**Source Tables:** PostgreSQL]
+B -->|Incremental Ingestion| C[Source Tables: PostgreSQL]
 
-C -->|dbt| D[**Staging Layer:** Normalized JSONB]
+C -->|dbt| D[Staging Layer: Normalized JSONB]
 
-D -->|dbt| E[**Intermediate Layer:** Relational Tables]
+D -->|dbt| E[Intermediate Layer: Relational Tables]
 
-E -->|dbt| F[**Marts:** Analytics Tables]
+E -->|dbt| F[Marts: Analytics Tables]
 ```
 
 Key design decisions:
@@ -77,7 +77,8 @@ The warehouse stores cricket match data in normalized relational tables.
 	 - `stg_cricsheet__match_info`
 	 - `stg_cricsheet__deliveries`
 2. **Intermediate Models**
-	- `int_venues` — match venues with city and country.
+	- `int_venues` — match venues with city and country
+    - `int_matches` - match info
 
 
 ### CLI Workflow
