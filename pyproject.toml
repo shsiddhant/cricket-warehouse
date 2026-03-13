@@ -48,7 +48,5 @@ dev = [
 ]
 
 [project.urls]
-Repository = "https://github.com/shsiddhant/womens-wc"
-Issues = "https://github.com/shsiddhant/womens-wc/issues"
-Changelog = "https://github.com/shsiddhant/womens-wc/blob/main/CHANGELOG.md"
-
+Repository = "https://github.com/shsiddhant/cricket-warehouse"
+Issues = "https://github.com/shsiddhant/cricket-warehouse/issues"
