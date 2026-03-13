@@ -56,6 +56,7 @@ def json_explode(json_file_path, hash_id, deliveries=[]):
                 d["team"] = inn["team"]
                 d["n_over"] = o
                 d["n_delivery"] = n_d
+                d["super_over"] = inn.get("super_over")
                 d["delivery"] = json.dumps(deliv)
                 deliveries.append(d)
     return deliveries
@@ -75,6 +76,7 @@ def copy_deliveries_json(
         "team",
         "n_over",
         "n_delivery",
+        "super_over",
         "delivery",
     ]
     deliveries = []
