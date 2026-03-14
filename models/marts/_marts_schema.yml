@@ -44,3 +44,54 @@ models:
               - innings_number
               - batting_position 
 
+  - name: fct_bowling_scorecard
+    description: "Table containing bowling scorecard for each innings."
+    columns:
+      - name: match_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('int_matches')
+                field: 'match_id'
+
+      - name: innings_number 
+        data_tests: [not_null]
+      
+      - name: is_super_over
+        data_tests: [not_null]
+      
+      - name: bowling_position
+        data_tests: [not_null]
+      
+      - name: bowler
+        data_tests: [not_null]
+  
+      - name: balls
+        data_tests: [not_null]
+      
+      - name: runs
+        data_tests: [not_null]
+      
+      - name: wickets
+        data_tests: [not_null]
+  
+      - name: dots
+        data_tests: [not_null]
+  
+      - name: economy
+        data_tests: [not_null]
+  
+      - name: wides
+        data_tests: [not_null]
+  
+      - name: noballs
+        data_tests: [not_null]
+      
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - match_id
+              - innings_number
+              - bowling_position 
+

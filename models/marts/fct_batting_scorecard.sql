@@ -12,7 +12,6 @@
 
 WITH
 
-
 dismissed_players AS (
 
 	SELECT * FROM {{ ref('fct_dismissed_players') }}
@@ -44,7 +43,6 @@ batter_stats_without_dismissal AS (
             ANY_VALUE(deliveries.super_over), FALSE
 
         ) AS is_super_over,
-
         
         ANY_VALUE(deliveries.team) AS team,
 
