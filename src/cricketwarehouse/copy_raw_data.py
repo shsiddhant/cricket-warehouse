@@ -10,6 +10,8 @@ if TYPE_CHECKING:
 
 from cricketwarehouse import RAW_DATA_SCHEMA
 from cricketwarehouse.util import check_file_hash_present
+
+
 def copy_json_to_table(
     conn: psycopg2.extensions.connection,
     json_files_list: list[Path],

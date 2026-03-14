@@ -8,7 +8,8 @@ import csv
 
 from cricketwarehouse import (
     JSON_FILES_DIR,
-    RAW_DATA_SCHEMA
+    RAW_DATA_SCHEMA,
+    MODELS_SCHEMA
 )
 from cricketwarehouse.util import (
     connect_db,
@@ -134,6 +135,7 @@ def ingest(
 def update_venue_city_seed(
     venue_city_seed: Path,
     schema: str | None = RAW_DATA_SCHEMA,
+    model_schema: str | None = MODELS_SCHEMA,
     ):
     """
     Update venue_city seed (CSV)
@@ -143,7 +145,7 @@ def update_venue_city_seed(
         FROM {schema}.src_venues
         EXCEPT
         SELECT venue_name
-        FROM cricket.venue_city;
+        FROM {MODELS_SCHEMA}.venue_city;
     """
     select_new = f"""
         SELECT venue_name, city
