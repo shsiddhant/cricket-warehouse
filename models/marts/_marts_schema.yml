@@ -1,0 +1,46 @@
+
+version: 2
+
+models:
+  - name: fct_batting_scorecard
+    description: "Table containing batting scorecard for each innings."
+    columns:
+      - name: match_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('int_matches')
+                field: 'match_id'
+
+      - name: innings_number 
+        data_tests: [not_null]
+      
+      - name: batting_position
+        data_tests: [not_null]
+      
+      - name: is_super_over
+        data_tests: [not_null]
+      
+      - name: team
+        data_tests: [not_null]
+
+      - name: player_name
+        data_tests: [not_null]
+      
+      - name: runs
+        data_tests: [not_null]
+  
+      - name: balls
+        data_tests: [not_null]
+      
+      - name: is_dismissed
+        data_tests: [not_null]
+      
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - match_id
+              - innings_number
+              - batting_position 
+
