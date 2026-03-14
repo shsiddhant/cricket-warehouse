@@ -15,7 +15,7 @@ models:
       - name: innings_number 
         data_tests: [not_null]
       
-      - name: player
+      - name: player_name
         data_tests: [not_null]
       
       - name: batting_position
@@ -29,3 +29,18 @@ models:
               - innings_number
               - batting_position 
 
+  - name: fct_dismissed_players
+    description: "Table containing players dismissal info for each innings."
+    columns:
+      - name: match_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('int_matches')
+                field: 'match_id'
+
+      - name: innings_number 
+        data_tests: [not_null]
+      
+      - name: player_out
+        data_tests: [not_null] 

@@ -97,7 +97,7 @@ fct_batting_order AS (
 
         match_id,
         innings_number,
-        player,
+        player AS player_name,
         COUNT(*) OVER w AS batting_position
         
     FROM fct_batting_order_duplicated
