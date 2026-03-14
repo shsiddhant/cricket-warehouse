@@ -138,22 +138,33 @@ def update_venue_city_seed(
     """
     Update venue_city seed (CSV)
     """
+    select_new_venue_names = f"""
+        SELECT venue_name
+        FROM {schema}.src_venues
+        EXCEPT
+        SELECT venue_name
+        FROM cricket.venue_city;
+    """
     select_new = f"""
         SELECT venue_name, city
         FROM {schema}.src_venues
-        EXCEPT
-        SELECT venue_name, city
-        FROM cricket.venue_city;
+        WHERE venue_name IN %s;
     """
     conn = None
     try:
         conn = connect_db()
         with conn.cursor() as cur:
-            cur.execute(select_new)
-            new_venues = cur.fetchall()
-        with open(venue_city_seed, "a", newline="") as file:
-            writer = csv.writer(file)
-            writer.writerows(new_venues)
+            cur.execute(select_new_venue_names)
+            new_venue_names = tuple(venue_name for (venue_name,) in cur.fetchall())
+            if new_venue_names:
+                cur.execute(select_new, (new_venue_names,))
+                new_venues = [
+                    (venue_name, city) if city else (venue_name, f"{venue_name}-CITY")
+                    for (venue_name, city) in cur.fetchall()
+                ]
+                with open(venue_city_seed, "a", newline="") as file:
+                    writer = csv.writer(file)
+                    writer.writerows(new_venues)
     except IOError as e:
         print("Error: ", e)
         if e.errno:
@@ -188,6 +199,6 @@ def update_city_country_seed(
             if row[1] and row[1] != "city"
         }
         cities_new = cities.difference(cities_current)
-        city_country = [(city, "null") for city in cities_new]
+        city_country = [(city, "UNKNOWN") for city in cities_new]
         writer = csv.writer(file)
         writer.writerows(city_country)

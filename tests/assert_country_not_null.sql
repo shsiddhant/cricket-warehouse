@@ -7,5 +7,5 @@ SELECT
 
 FROM {{ ref('int_venues') }}
 
-WHERE country = 'null' OR country IS NULL
+WHERE country IS NULL
 
