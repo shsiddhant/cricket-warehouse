@@ -21,19 +21,7 @@ int_deliveries AS (
 
 deliveries_sequence AS (
 
-    SELECT
-        match_id,
-        innings_number,
-        batter,
-        non_striker,
-        COUNT(*) OVER w AS ball_in_innings
-
-    FROM int_deliveries
-
-    WINDOW w AS (
-        PARTITION BY match_id, innings_number
-        ORDER BY over_number, ball_in_over
-    )
+    SELECT * FROM {{ ref('fct_deliveries_sequence') }}
 
 ),
 
