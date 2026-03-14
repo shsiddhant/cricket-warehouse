@@ -3,6 +3,7 @@ from typing import Optional
 from typing_extensions import Annotated
 import typer
 
+
 from cricketwarehouse.cli_util import (
     download_ui,
     ingest,
@@ -10,10 +11,17 @@ from cricketwarehouse.cli_util import (
     update_venue_city_seed,
     update_city_country_seed,
 )
+from cricketwarehouse.config import (
+    init_config,
+#    read_config
+)
+from cricketwarehouse.util import open_default_editor
 from cricketwarehouse import (
     JSON_FILES_DIR,
     RAW_DATA_SCHEMA,
     SEEDS_DIR,
+    DOWNLOAD_DIR,
+    CONFIG_FILE,
 )
 
 from pathlib import Path  # noqa: TC003
@@ -23,7 +31,9 @@ app = typer.Typer(name="cricketwarehouse")
 @app.command("fetch")
 def download(
     url: Annotated[str, typer.Argument(help="Cricsheet url")],
-    filepath: Annotated[Path, typer.Argument(help="Path to downloaded file")],
+    filepath: Annotated[
+        Path, typer.Argument(help="Path to downloaded file")
+        ] =DOWNLOAD_DIR / "cricsheet_json.zip",
     extaction_dir: Annotated[
         Optional[Path], typer.Option(help="Path to extaction directory")
         ] = JSON_FILES_DIR
@@ -33,6 +43,20 @@ def download(
     """
     if extaction_dir is not None:
         download_ui(url, filepath, output_dir=extaction_dir)
+
+@app.command("configure")
+def configure(
+    init_config_file: Annotated[
+        Optional[bool], typer.Option(help="Initalize configuration file.")
+        ] = False
+    ):
+    """
+    Configure cricket-warehouse.
+    """
+    if init_config_file:
+        init_config()
+    open_default_editor(CONFIG_FILE)
+
 
 @app.command("init")
 def init(
@@ -60,7 +84,7 @@ def init(
 def ingest_files(
     json_files_path: Annotated[
         Path, typer.Argument(help="Path to directory containing JSON files")
-        ],
+        ] = JSON_FILES_DIR,
     schema: Annotated[
         Optional[str], typer.Option(help="Schema for source tables")
         ] = RAW_DATA_SCHEMA

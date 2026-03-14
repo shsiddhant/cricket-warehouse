@@ -2,30 +2,40 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import hashlib
 import psycopg2
-import os
 import json
-from dotenv import load_dotenv
+import os
+import subprocess
+import platform
 
 from cricketwarehouse import (
-    CONFIG_DIR,
     RAW_DATA_SCHEMA,
 )
+from cricketwarehouse.config import read_config
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+def open_default_editor(filepath: str | Path):
+    current_os = platform.system()
+
+    if current_os == "Windows":
+        os.startfile(filepath, "edit")
+    else:
+        subprocess.run(["nano", str(filepath)], check=True)
 
 def connect_db() -> psycopg2.extensions.connection:
     conn = None
-    # Load Environment
-    load_dotenv(CONFIG_DIR / ".env")
+    # Load Config
+    config_data = read_config()
+    keys = [
+        "dbname",
+        "user",
+        "password",
+        "host"
+    ]
+    db_info = {key: config_data[key] for key in keys}
     # Connect to DB
-    conn = psycopg2.connect(
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASS"),
-        host=os.getenv("DB_HOST")
-        )
+    conn = psycopg2.connect(**db_info)
     return conn
 
 def init_db(
