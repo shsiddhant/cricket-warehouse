@@ -1,0 +1,21 @@
+
+version: 2
+
+models:
+  - name: fct_match_summary
+    description: "Table containing match_summaries."
+    columns:
+      - name: match_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('int_matches')
+                field: 'match_id'
+
+      - name: start_date
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('int_matches')
+                field: 'start_date'
+
