@@ -5,6 +5,8 @@ from requests import HTTPError
 from typer import Exit
 import psycopg2
 import csv
+import logging
+from logging.handlers import MemoryHandler
 
 from cricketwarehouse import (
     JSON_FILES_DIR,
@@ -39,6 +41,8 @@ def download_ui(
     """
     Download files from URL and show progress.
     """
+    logger = logging.getLogger("cricwh.fetch")
+    logger.info("Starting download from URL: %s...", url)
     try:
         with Progress() as progress:
             download_task = progress.add_task(
@@ -62,31 +66,37 @@ def download_ui(
                 url, filepath, chunk_size=65536, callback=download_callback
                 )
 
-            extract_files(filepath, output_dir)
+            json_files_list = extract_files(filepath, output_dir)
+            logger.info(
+                "Downloaded ZIP from URL: '%s' and extracted %s JSON files.",
+                url, len(json_files_list)
+            )
 
     except HTTPError as e:
-        print("Error: ", e.args[0]["message"])
-        raise Exit(e.args[0]["error"])
+        logger.error(e)
+        raise Exit(1)
 
 def init_source(json_table_name: str = "matches_json"):
     conn = None
+    logger = logging.getLogger("cricwh.init")
     try:
         conn = connect_db()
         print("\nInitializing source tables...\n")
         init_db(conn, RAW_DATA_SCHEMA, json_table_name=json_table_name)
     except IOError as e:
-        print("Error: ", e)
+        logger.error(e)
         if e.errno:
             raise Exit(e.errno)
         else:
             raise Exit(1)
     except psycopg2.Error as e:
-        print("Error:", e)
+        logger.error(e)
         if conn is not None:
             conn.rollback()
         raise Exit(2)
     else:
         conn.commit()
+        logger.info("Initialized source tables.")
 
 def ingest(
     json_files_list: list[Path],
@@ -95,42 +105,80 @@ def ingest(
     ):
     conn: psycopg2.extensions.connection | None
     conn = None
+    logger = logging.getLogger("cricwh.ingest")
     try:
         # Connect to DB
         conn = connect_db()
         # Get currently ingested files list
         current_files_list = get_current_files(conn, schema)
         # Copy match info JSON data to matches JSON table
-        print(f"\nCopying to source table '{json_table_name}'...")
+        logger.info("Copying to source table: '%s'...", json_table_name)
         copy_json_to_table(
             conn, json_files_list, current_files_list, schema, json_table_name
         )
-        print(f"\nJSON data copied to source table '{json_table_name}'.")
+        logger.info("JSON data copied to source table: '%s'.", json_table_name)
         # Copy deliveries JSON data to delveries JSON table
-        print("\nCopying to source table 'deliveries_json'...")
+        logger.info("Copying to source table: 'deliveries_json'...")
         copy_deliveries_json(conn, json_files_list, current_files_list, schema)
-        print("\nDeliveries data copied to source table 'deliveries_json'.")
+        logger.info("Deliveries data copied to source table: 'deliveries_json'.")
         # Update ingested files table
-        print("\nUpdating 'json_files' table...")
+        logger.info("Updating files list table: 'json_files'...")
         update_files_list(conn, json_files_list, schema)
-        print("\nUpdated table 'json_files' with newly ingested files.")
+        logger.info("Updated 'json_files' with newly ingested files.")
         # Update venues source
-        print("\nUpdating source table 'src_venues'...")
+        logger.info("Updating source table: src_venues...")
         update_src_venues(conn, json_files_list, current_files_list, schema)
-        print("\nUpdated source table 'src_venues'")
+        logger.info("Updated source table: src_venues.")
     except IOError as e:
-        print("Error: ", e)
+        logger.error(e)
         if e.errno:
             raise Exit(e.errno)
         else:
             raise Exit(1)
     except psycopg2.Error as e:
-        print("Error:", e)
+        logger.error(e)
         if conn is not None:
             conn.rollback()
         raise Exit(2)
+    except Exception as e:
+        logger.error(e)
+        raise Exit(3)
     else:
         conn.commit()
+
+def ingest_batch(
+    json_files_list: list[Path],
+    schema: str = RAW_DATA_SCHEMA,
+    json_table_name: str = "matches_json",
+    batch_size: int = 500,
+    ):
+    """
+    """
+    size = len(json_files_list)
+    if not batch_size or batch_size <= 0:
+        raise ValueError("Batch Size must be bigger than zero.")
+    else:
+        n_batches = divmod(size, batch_size)[0]
+        batches = [
+            slice(i * batch_size, (i + 1) * batch_size) for i in range(n_batches)
+        ]
+    batches.append(slice(n_batches * batch_size, None))
+    logger = logging.getLogger("cricwh.ingest")
+    logger.info("Ingesting %s files...", size)
+    print("Ingesting %s files..." % size)
+    logger.info("Batch size: %s", batch_size)
+    print("Batch size: %s" % batch_size)
+    for batch_num, batch in enumerate(batches):
+        logger.info("Batch #%s of %s", batch_num + 1, len(batches))
+        print("Batch #%s of %s" % ( batch_num + 1, len(batches)))
+        ingest(
+            json_files_list[batch],
+            schema,
+            json_table_name
+        )
+    for handler in logger.handlers:
+        if isinstance(handler, MemoryHandler):
+            handler.flush()
 
 def update_venue_city_seed(
     venue_city_seed: Path,
@@ -140,12 +188,13 @@ def update_venue_city_seed(
     """
     Update venue_city seed (CSV)
     """
+    logger = logging.getLogger("cricwh.update")
     select_new_venue_names = f"""
         SELECT venue_name
         FROM {schema}.src_venues
         EXCEPT
         SELECT venue_name
-        FROM {MODELS_SCHEMA}.venue_city;
+        FROM {model_schema}.venue_city;
     """
     select_new = f"""
         SELECT venue_name, city
@@ -168,18 +217,20 @@ def update_venue_city_seed(
                     writer = csv.writer(file)
                     writer.writerows(new_venues)
     except IOError as e:
-        print("Error: ", e)
+        logger.error(e)
         if e.errno:
             raise Exit(e.errno)
         else:
             raise Exit(1)
     except psycopg2.Error as e:
-        print("Error:", e)
+        logger.error(e)
         if conn is not None:
             conn.rollback()
         raise Exit(2)
     except Exception:
         raise
+    else:
+        logger.info("Updated venue city seed.")
 
 def update_city_country_seed(
     venue_city_seed: Path,
@@ -188,6 +239,7 @@ def update_city_country_seed(
     """
     Update city country seed.
     """
+    logger = logging.getLogger("cricwh.update")
     with open(venue_city_seed, "r") as file:
         reader = csv.reader(file)
         cities = {
@@ -204,3 +256,4 @@ def update_city_country_seed(
         city_country = [(city, "UNKNOWN") for city in cities_new]
         writer = csv.writer(file)
         writer.writerows(city_country)
+        logger.info("Updated city country seed.")

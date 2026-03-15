@@ -6,7 +6,6 @@ import json
 import os
 import subprocess
 import platform
-
 from cricketwarehouse import (
     RAW_DATA_SCHEMA,
 )
@@ -19,7 +18,7 @@ def open_default_editor(filepath: str | Path):
     current_os = platform.system()
 
     if current_os == "Windows":
-        os.startfile(filepath, "edit")
+        os.startfile(filepath, "edit") # type: ignore[reportAttributeAccessIssue]
     else:
         subprocess.run(["nano", str(filepath)], check=True)
 

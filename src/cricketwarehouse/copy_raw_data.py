@@ -3,14 +3,16 @@ from typing import TYPE_CHECKING
 import json
 import io
 import csv
-from pathlib import Path
+import logging
 
 if TYPE_CHECKING:
     import psycopg2
+    from pathlib import Path
 
 from cricketwarehouse import RAW_DATA_SCHEMA
 from cricketwarehouse.util import check_file_hash_present
 
+logger = logging.getLogger("cricwh.ingest")
 
 def copy_json_to_table(
     conn: psycopg2.extensions.connection,
@@ -34,9 +36,17 @@ def copy_json_to_table(
         file_hash = check_file_hash_present(current_files_list, filepath)
         if file_hash is not None:
             filename = filepath.name
+            match_id = filename.removesuffix(".json")
             with open(filepath, "r") as file:
                 data = json.load(file)
-            data["match_id"] = int(filename.removesuffix(".json"))
+            try:
+                data["match_id"] = int(match_id)
+            except ValueError:
+                logger.info("Match id not integer: %s. Skipping file...", match_id)
+                continue
+            logger.info(
+                "Copying match info to source '%s': %s...", json_table_name, match_id
+            )
             with conn.cursor() as cur:
                 cur.copy_expert(
                     f"COPY {schema}.{json_table_name} (data) FROM STDIN",
@@ -44,15 +54,24 @@ def copy_json_to_table(
                 )
 
 def json_explode(json_file_path, hash_id, deliveries=[]):
+    filename = json_file_path.name
+    match_id = filename.removesuffix(".json")
     with open(json_file_path, "rb") as file:
         data = json.load(file)
     for n, inn in enumerate(data["innings"]):
+        if "overs" not in inn:
+            raise ValueError(
+                f"Missing key: 'overs' for match id: {match_id}"
+            )
         for o, over in enumerate(inn["overs"]):
             for n_d, deliv in enumerate(over["deliveries"]):
                 d = {}
-                d["match_id"] = int(
-                    Path(json_file_path).name.removesuffix(".json")
-                )
+                try:
+                    d["match_id"] = int(match_id)
+                except ValueError:
+                    raise ValueError(
+                        f"Match id not integer: {match_id}. Skipping file..."
+                    )
                 d["hash_id"] = hash_id
                 d["n_innings"] = n
                 d["team"] = inn["team"]
@@ -87,7 +106,17 @@ def copy_deliveries_json(
     for filepath in json_files_list:
         file_hash = check_file_hash_present(current_files_list, filepath)
         if file_hash is not None:
-            deliveries = json_explode(filepath, file_hash, deliveries)
+            filename = filepath.name
+            match_id = filename.removesuffix(".json")
+            try:
+                deliveries = json_explode(filepath, file_hash, deliveries)
+            except ValueError as e:
+                logger.info(e)
+                continue
+            else:
+                logger.info(
+                    "Copying deliveries to source 'deliveries_json': %s...", match_id
+                )
     writer.writerows(deliveries)
     stdin.seek(0)
     with conn.cursor() as cur:

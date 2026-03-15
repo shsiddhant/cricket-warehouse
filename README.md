@@ -7,7 +7,7 @@
 
 A data warehouse for ball-by-ball cricket match data, designed for analytics and modeling.
 
-The project ingests raw match JSON from [Cricsheet](ttps://cricsheet.org/), normalizes the data into relational tables in PostgreSQL, and builds analytical models using dbt.
+The project ingests raw match JSON from [Cricsheet](https://cricsheet.org/), normalizes the data into relational tables in PostgreSQL, and builds analytical models using dbt.
 
 ## Overview
 
@@ -18,7 +18,7 @@ Cricsheet data is nested and complex. Each match file contains hierarchical JSON
 	- teams and players
 	- outcomes and events
 - innings
-- deliveries
+	- deliveries
 
 This project builds a reproducible data pipeline that transforms this raw data into a structured warehouse suitable for querying and analytics.
 
@@ -77,27 +77,88 @@ The warehouse stores cricket match data in normalized relational tables.
 	 - `stg_cricsheet__match_info`
 	 - `stg_cricsheet__deliveries`
 2. **Intermediate Models**
-	- `int_venues` — match venues with city and country
-    - `int_matches` - match info
+	- `int_venues` — Each row represents a match venue.
+    - `int_matches` - Each row represents a match, with columns such as
+	    - `match_id`
+	    - `start_date`
+	    - `toss_winner`
+	    - `outcome_type`
+	    - `winner`
+    - `int_deliveries`: Each row represents a unique match delivery.
+    - `int_innings`: Each row represents a match innings, with columns such as
+        - `innings_number`
+        - `team` 
+        - `runs_scored`
+    - `int_teams`: Each row represents a unique (team, format) pair.
+    - `int_match_teams`: Junction table for represent many to many relationship between matches and teams.
+    - `int_players`: Each row represents a unique (player, team, format) tuple.
+    - `int_match_players`: Junction table for represent many to many relationship between matches and players.
 
-
-### CLI Workflow
+## CLI
 
 The project includes a CLI for managing the ingestion pipeline.
 
+```shell
+cricwh --help
+Usage: cricwh [OPTIONS] COMMAND [ARGS]...                                                                                                                                    
+╭─ Options ────────────────────────────────────────────────────────────╮
+│ --install-completion       Install completion for the current shell. │
+│ --show-completion          Show completion for the current shell, to │
+│                            copy it or customize the installation.    │
+│ --help                     Show this message and exit.               │
+╰──────────────────────────────────────────────────────────────────────╯
+╭─ Commands────────────────────────────────────────────────────────────╮
+│ fetch      Fetch data from Cricsheet.                                │
+│ configure  Configure cricket-warehouse.                              │
+│ init       Initialize source tables and seeds.                       │
+│ ingest     Ingest JSON files into source tables.                     │
+│ update     Update venue city seed.                                   │
+╰──────────────────────────────────────────────────────────────────────╯
+```
+
+### Configuration
+
+A config file is provided to manage PostgreSQL database credentials. On first run, `cricwh` initializes an example config. The config file may be found at:
+
+|Operating System |Location|
+|---|---|
+|**Linux/Unix** |`~/.config/cricketwarehouse/config.yaml`|
+|**macOS**|`~/Library/Preferences/cricketwarehouse/config.yaml`|
+|**Windows**|`C:\Users\<username>\AppData\Local\cricketwarehouse\cricketwarehouse/config.yaml`|
+
+You can edit the configuration using the `configure` command:
+
+```shell
+cricwh configure [--init-config-file]
+```
+
+You can reset the config file using the `--init-config-file` flag in the `configure` command.
+
+### Logs
+
+Detailed logs are written during each command. The log file may be found at:
+
+|Operating System |Location|
+|---|---|
+|**Linux/Unix** |`~/.local/share/cricketwarehouse/cricwh.log`|
+|**macOS**|`~/Library/Application Support/cricketwarehouse/cricwh.log`|
+|**Windows**|`C:\Users\<username>\AppData\Local\cricketwarehouse\cricketwarehouse/cricwh.log`|
+
+## Workflow
+
 Typical workflow:
 
-1. Fetch and extract raw match data.
-
-    ```shell
-    cricwh fetch [URL] [ZIP FILE PATH]
-    ```
-
-2. Initialize source tables.
+1. Initialize source tables on first run.
 
 	```shell
 	cricwh init
 	```
+
+2. Fetch and extract raw match data.
+
+    ```shell
+    cricwh fetch [URL] [ZIP FILE PATH]
+    ```
 
 3. Seed lookup tables.
 
@@ -117,20 +178,10 @@ Typical workflow:
 	cricwh update --seeds
 	```
 
-6. Manually update missing city and country values in seed CSV files and seed updated CSV.
-	```shell
-	# Seed after manual updation
-	dbt seed
-	```
+6. (Optional) Manually update missing city and country values in seed CSV files.
 7. Run dbt models
 	```shell
-	dbt run
-	```
-
-   **Note:** To find more details about the CLI, run
-
-	```shell
-	cricwh --help
+	dbt build
 	```
 
 The ingestion process tracks processed files using file hashes, ensuring new files are added without duplicating existing data.
