@@ -26,7 +26,9 @@ city_country AS (
 
 venues_with_hash_id AS (
     
-    SELECT 
+    SELECT
+        
+        DISTINCT ON (venue_name)
 
         {{ dbt_utils.generate_surrogate_key(["venue_name"]) }} AS venue_id,
 
