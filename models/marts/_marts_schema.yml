@@ -77,10 +77,7 @@ models:
   
       - name: dots
         data_tests: [not_null]
-  
-      - name: economy
-        data_tests: [not_null]
-  
+   
       - name: wides
         data_tests: [not_null]
   

@@ -136,7 +136,14 @@ bowling_scorecard AS (
         runs,
         wickets,
         dots,
-        ROUND(6.0 * runs / balls, 2) AS economy,
+        CASE
+
+            WHEN balls > 0
+                THEN ROUND(6.0 * runs / balls, 2)
+
+            ELSE NULL
+        END
+        AS economy,
         wides,
         noballs
 
