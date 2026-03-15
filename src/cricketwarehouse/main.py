@@ -2,11 +2,11 @@ from __future__ import annotations
 from typing import Optional
 from typing_extensions import Annotated
 import typer
-
+import logging
 
 from cricketwarehouse.cli_util import (
     download_ui,
-    ingest,
+    ingest_batch,
     init_source,
     update_venue_city_seed,
     update_city_country_seed,
@@ -15,6 +15,7 @@ from cricketwarehouse.config import (
     init_config,
 #    read_config
 )
+from cricketwarehouse.logging import custom_logger
 from cricketwarehouse.util import open_default_editor
 from cricketwarehouse import (
     JSON_FILES_DIR,
@@ -41,6 +42,14 @@ def download(
     """
     Fetch data from Cricsheet.
     """
+    logger = custom_logger("cricwh.fetch")
+    logger.info(
+        "cricwh fetch %s %s %s %s",
+        url if url else "",
+        filepath if filepath else "",
+        "--extraction-dir" if extaction_dir else "",
+        extaction_dir if extaction_dir else ""
+    )
     if extaction_dir is not None:
         download_ui(url, filepath, output_dir=extaction_dir)
 
@@ -53,6 +62,11 @@ def configure(
     """
     Configure cricket-warehouse.
     """
+    logger = custom_logger("cricwh.configure")
+    logger.info(
+        "cricwh configure %s",
+        "--init-config-file" if init_config_file else ""
+    )
     if init_config_file:
         init_config()
     open_default_editor(CONFIG_FILE)
@@ -67,6 +81,11 @@ def init(
     """
     Initialize source tables and seeds.
     """
+    logger = custom_logger("cricwh.init")
+    logger.info(
+        "cricwh init %s",
+        "--seeds" if seeds else ""
+    )
     init_source()
     print("Source tables initialized.")
     venue_city = SEEDS_DIR / "venue_city.csv"
@@ -79,6 +98,7 @@ def init(
         with open(city_country, "w") as file:
             file.write("city,country\n")
         print("\nInitialized city country seed.")
+    logger.info("Initialization finished.")
 
 @app.command("ingest")
 def ingest_files(
@@ -92,9 +112,18 @@ def ingest_files(
     """
     Ingest JSON files into source tables.
     """
+    logger = custom_logger("cricwh.ingest")
+    logger.info(
+        "cricwh ingest %s %s %s",
+        json_files_path,
+        "--schema" if schema else "",
+        schema if schema else ""
+        )
     json_files_list = list(json_files_path.glob("*.json"))
     if schema is not None:
-        ingest(json_files_list, schema, json_table_name="matches_json")
+        ingest_batch(
+            json_files_list, schema, json_table_name="matches_json", batch_size=1000
+        )
 
 @app.command("update")
 def update_venue_city(
@@ -105,6 +134,9 @@ def update_venue_city(
     """
     Update venue city seed.
     """
+    custom_logger("cricwh.update")
+    logger = logging.getLogger("cricwh.update")
+    logger.info("cricwh update %s", "--seeds" if seeds else "")
     if seeds:
         venue_city_seed = SEEDS_DIR / "venue_city.csv"
         city_country_seed = SEEDS_DIR / "city_country.csv"

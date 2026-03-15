@@ -26,3 +26,4 @@ DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 JSON_FILES_DIR.mkdir(parents=True, exist_ok=True)
 
 CONFIG_FILE = CONFIG_DIR / "config.yaml"
+LOG_FILE = USER_DATA_DIR / "cricwh.log"
