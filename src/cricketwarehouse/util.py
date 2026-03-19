@@ -8,6 +8,7 @@ import subprocess
 import platform
 from cricketwarehouse import (
     RAW_DATA_SCHEMA,
+    CONFIG_FILE
 )
 from cricketwarehouse.config import read_config
 
@@ -25,7 +26,7 @@ def open_default_editor(filepath: str | Path):
 def connect_db() -> psycopg2.extensions.connection:
     conn = None
     # Load Config
-    config_data = read_config()
+    config_data = read_config(CONFIG_FILE)
     keys = [
         "dbname",
         "user",

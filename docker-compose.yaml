@@ -1,0 +1,92 @@
+x-airflow-common: &airflow-common
+  build: .
+  env_file:
+    - .env
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__PARALLELISM: 2
+    AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 1
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__WEBSERVER__RATELIMIT_STORAGE_URL: redis://redis:6379/0
+
+    XDG_CACHE_HOME: /opt/airflow/cache
+    XDG_CONFIG_HOME: /opt/airflow/config
+    XDG_STATE_HOME: /opt/airflow/state
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    &airflow-common-depends-on
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+  volumes: &prod_volumes
+    - cricwh_cache:/opt/airflow/cache
+    - cricwh_config:/opt/airflow/config
+    - cricwh_state:/opt/airflow/state
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_USER}
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+
+  redis:
+    image: redis:7-bookworm
+    expose:
+      - 6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 30s
+      retries: 50
+      start_period: 30s
+    restart: always
+
+
+  airflow-init:
+    <<: *airflow-common
+    command: >
+      bash -c "
+      airflow db migrate &&
+      airflow users create --username admin --firstname airflow --lastname airflow --role Admin --email airflow@example.com --password admin"
+    depends_on:
+      <<: *airflow-common-depends-on
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+    restart: always
+
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+    restart: always
+
+
+volumes:
+  postgres-db-volume:
+  cricwh_cache:
+  cricwh_config:
+  cricwh_state:

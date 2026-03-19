@@ -1,14 +1,10 @@
-# Docker dev
-cache/
-config/
-logs/
-state/
-docker-compose.override.yaml
+**/.gitignore
+**/.git/
 
 
-# Ignore system-specific files
-.DS_Store
-Thumbs.db
+# System files
+**/.DS_Store
+**/Thumbs.db
 
 # Backup files
 *~
@@ -20,6 +16,9 @@ Thumbs.db
 *.pyc
 __pycache__/
 */__pycache__/
+
+# Ruff
+**/ruff.toml
 
 # Build artifacts
 *.egg-info/
@@ -37,20 +36,11 @@ venv/
 env/
 .env/
 
-# Env files
-**/*.env
-
 # Obsidian
 .obsidian/
 
-# Raw data
-data/raw/
-
 # Jupyter
 *.ipynb_checkpoints/
-
-# config
-config/.env
 
 # dbt
 **/target/
