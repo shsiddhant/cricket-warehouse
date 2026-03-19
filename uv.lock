@@ -204,6 +204,7 @@ source = { editable = "." }
 dependencies = [
     { name = "dbt-core" },
     { name = "dbt-postgres" },
+    { name = "platformdirs" },
     { name = "psycopg2" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
@@ -236,6 +237,7 @@ requires-dist = [
     { name = "ipython", marker = "extra == 'dev'", specifier = ">=8.38.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.18.2" },
     { name = "pandas-stubs", marker = "extra == 'dev'", specifier = ">=2.3.3.260113" },
+    { name = "platformdirs", specifier = ">=4.9.4" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.3.0" },
     { name = "psycopg2", specifier = ">=2.9.11" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4.2" },
