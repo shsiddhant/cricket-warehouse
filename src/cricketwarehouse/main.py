@@ -12,11 +12,9 @@ from cricketwarehouse.cli_util import (
     update_city_country_seed,
 )
 from cricketwarehouse.config import (
-    init_config,
-#    read_config
+    init_config
 )
 from cricketwarehouse.logging import custom_logger
-from cricketwarehouse.util import open_default_editor
 from cricketwarehouse import (
     JSON_FILES_DIR,
     RAW_DATA_SCHEMA,
@@ -54,22 +52,16 @@ def download(
         download_ui(url, filepath, output_dir=extaction_dir)
 
 @app.command("configure")
-def configure(
-    init_config_file: Annotated[
-        Optional[bool], typer.Option(help="Initalize configuration file.")
-        ] = False
-    ):
+def configure():
     """
     Configure cricket-warehouse.
     """
     logger = custom_logger("cricwh.configure")
     logger.info(
-        "cricwh configure %s",
-        "--init-config-file" if init_config_file else ""
+        "cricwh configure"
     )
-    if init_config_file:
-        init_config()
-    open_default_editor(CONFIG_FILE)
+    if CONFIG_FILE:
+        init_config(CONFIG_FILE)
 
 
 @app.command("init")
