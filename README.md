@@ -2,6 +2,7 @@
 
 ![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fshsiddhant%2Fmemory.fm%2Frefs%2Fheads%2Fmain%2Fpyproject.toml&style=for-the-badge&logo=python&logoColor=FFE873&color=4B8BBE)
 ![dbt](https://img.shields.io/badge/dbt-data_pipeline-orange?style=for-the-badge)
+![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?style=for-the-badge&logo=Apache%20Airflow&logoColor=white)
 ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
@@ -50,9 +51,10 @@ Raw dataset characteristics:
 ```mermaid
 flowchart TD
 
-A[Cricsheet Match Data: JSON ZIP] -->|Fetch| B[Raw JSON Files]
-
-B -->|Incremental Ingestion| C[Source Tables: PostgreSQL]
+subgraph Airflow DAG
+    A[Cricsheet] -->|Fetch and Extract JSON| B[Local Cache]
+    B -->|Batch Ingestion| C[Source Tables: PostgreSQL]
+end
 
 C -->|dbt| D[Staging Layer: Normalized JSONB]
 
@@ -69,6 +71,19 @@ Key design decisions:
 - Transformations are implemented as dbt models
 - venue metadata is managed via seed tables.
 
+## Orchestration (Airflow)
+
+The ingestion pipeline is orchestrated using Apache Airflow running in Docker.
+
+- Airflow runs with a `LocalExecutor` for parallel task execution
+- The ingestion pipeline is implemented as a DAG (`ingest_data`)
+- Tasks:
+  - Fetch and extract JSON files from Cricsheet.
+  - Batch ingest data into source tables.
+
+Airflow uses a configurable Postgres connection (`cricwh_pg_conn`) configured via environment variables.
+
+The pipeline is fully containerized and reproducible via Docker Compose.
 
 ## Database Model
 
@@ -319,6 +334,117 @@ LIMIT 10;
 (10 rows)
 ```
 
+## Installation
+
+### Prerequisites
+
+* Python 3.10+
+* PostgreSQL 14+
+* Git
+* Docker (optional)
+
+There are two ways to run the pipeline: locally or in a docker container, orchestrated with Airflow.
+
+### Running Locally
+
+
+#### Clone the repository
+
+```shell
+git clone https://github.com/shsiddhant/cricket-warehouse.git
+cd cricket-warehouse
+```
+
+#### Create and activate a virtual environment
+
+#### Using `uv`
+
+```shell
+uv venv .venv --seed
+source .venv/bin/activate
+uv sync
+```
+
+#### Using `pip`
+
+```shell
+python -m venv .venv
+source .venv/bin/activate
+pip install .
+```
+
+#### Use CLI to run the pipeline manually.
+
+See [below](#CLI) on how to use the CLI to run the pipeline.
+
+
+
+### Run in Docker & Airflow
+
+The full pipeline can be run using Docker Compose.
+
+#### Start services
+
+```bash
+docker compose up --build
+
+```
+
+This will start:
+
+- PostgreSQL (Data Warehouse)
+- Airflow Scheduler
+- Airflow Webserver (UI)
+
+
+#### Access Airflow UI
+
+You can open the UI at [localhost:8080](http://localhost:8080).
+
+Default credentials:
+
+- username: admin
+- password: admin
+
+You can set credentials in a .env file. Look at the .env.example provided in the repo for variable names.
+
+![Airflow Webserver Log in](assets/log_in.png)
+
+#### Add a Connection
+
+Before you can run the DAG, you must setup a postgres connection with credentials
+present in the .env files.
+
+![Add a PostgreSQL connection](assets/add_pg_conn.png)
+
+#### Run the DAG
+
+Now you can run the Airflow DAG for ingestion.
+
+Edit the Cricsheet URL as per your needs, and start the DAG. Note that you must use the correct connection
+id as set earlier.
+
+![Toggle and trigger the DAG](assets/trigger_dag.png)
+
+### Run dbt models
+
+Until dbt is orchestrated via Airflow and Astronomer Cosmos, models must be run manually inside the container.
+
+```shell
+docker exec -it <airflow-container> bash
+cd dbt
+dbt debug
+dbt build
+```
+
+### Access the Warehouse
+
+You can access the warehouse for queries by running the psql in the postgres container:
+
+```
+docker exec -it cricket-warehouse-postgres-1 psql -U admin -d cricket_warehouse 
+```
+
 ## CLI
 
 The project includes a CLI for managing the ingestion pipeline.
@@ -369,7 +495,7 @@ Detailed logs are written during each command. The log file may be found at:
 |**macOS**|`~/Library/Application Support/cricketwarehouse/cricwh.log`|
 |**Windows**|`C:\Users\<username>\AppData\Local\cricketwarehouse\cricketwarehouse/cricwh.log`|
 
-## Workflow
+### CLI Workflow
 
 Typical workflow:
 
@@ -411,38 +537,6 @@ Typical workflow:
 
 The ingestion process tracks processed files using file hashes, ensuring new files are added without duplicating existing data.
 
-## Installation
-
-### Prerequisites
-
-* Python 3.10+
-* PostgreSQL 14+
-* Git
-
-### Clone the repository
-
-```shell
-git clone https://github.com/shsiddhant/cricket-warehouse.git
-cd cricket-warehouse
-```
-
-### Create and activate a virtual environment
-
-#### Using `uv`
-
-```shell
-uv venv .venv --seed
-source .venv/bin/activate
-uv sync
-```
-
-#### Using `pip`
-
-```shell
-python -m venv .venv
-source .venv/bin/activate
-pip install .
-```
 
 ## Tools and Libraries
 

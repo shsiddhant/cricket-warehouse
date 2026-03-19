@@ -14,7 +14,6 @@ from cricketwarehouse import (
     MODELS_SCHEMA
 )
 from cricketwarehouse.util import (
-    connect_db,
     init_db,
     update_files_list,
     get_current_files,
@@ -36,12 +35,12 @@ if TYPE_CHECKING:
 def download_ui(
     url: str,
     filepath: str | Path,
-    output_dir: Path = JSON_FILES_DIR
+    output_dir: Path = JSON_FILES_DIR,
+    logger: logging.Logger = logging.getLogger("cricwh.fetch")
     ):
     """
     Download files from URL and show progress.
     """
-    logger = logging.getLogger("cricwh.fetch")
     logger.info("Starting download from URL: %s...", url)
     try:
         with Progress() as progress:
@@ -76,11 +75,12 @@ def download_ui(
         logger.error(e)
         raise Exit(1)
 
-def init_source(json_table_name: str = "matches_json"):
-    conn = None
+def init_source(
+    conn,
+    json_table_name: str = "matches_json",
     logger = logging.getLogger("cricwh.init")
+    ):
     try:
-        conn = connect_db()
         print("\nInitializing source tables...\n")
         init_db(conn, RAW_DATA_SCHEMA, json_table_name=json_table_name)
     except IOError as e:
@@ -99,16 +99,13 @@ def init_source(json_table_name: str = "matches_json"):
         logger.info("Initialized source tables.")
 
 def ingest(
+    conn,
     json_files_list: list[Path],
     schema: str = RAW_DATA_SCHEMA,
-    json_table_name: str = "matches_json"
-    ):
-    conn: psycopg2.extensions.connection | None
-    conn = None
+    json_table_name: str = "matches_json",
     logger = logging.getLogger("cricwh.ingest")
+    ):
     try:
-        # Connect to DB
-        conn = connect_db()
         # Get currently ingested files list
         current_files_list = get_current_files(conn, schema)
         # Copy match info JSON data to matches JSON table
@@ -147,10 +144,12 @@ def ingest(
         conn.commit()
 
 def ingest_batch(
+    conn,
     json_files_list: list[Path],
     schema: str = RAW_DATA_SCHEMA,
     json_table_name: str = "matches_json",
     batch_size: int = 500,
+    logger = logging.getLogger("cricwh.ingest")
     ):
     """
     """
@@ -163,7 +162,6 @@ def ingest_batch(
             slice(i * batch_size, (i + 1) * batch_size) for i in range(n_batches)
         ]
     batches.append(slice(n_batches * batch_size, None))
-    logger = logging.getLogger("cricwh.ingest")
     logger.info("Ingesting %s files...", size)
     print("Ingesting %s files..." % size)
     logger.info("Batch size: %s", batch_size)
@@ -172,6 +170,7 @@ def ingest_batch(
         logger.info("Batch #%s of %s", batch_num + 1, len(batches))
         print("Batch #%s of %s" % ( batch_num + 1, len(batches)))
         ingest(
+            conn,
             json_files_list[batch],
             schema,
             json_table_name
@@ -181,14 +180,15 @@ def ingest_batch(
             handler.flush()
 
 def update_venue_city_seed(
+    conn,
     venue_city_seed: Path,
     schema: str | None = RAW_DATA_SCHEMA,
     model_schema: str | None = MODELS_SCHEMA,
+    logger = logging.getLogger("cricwh.update")
     ):
     """
     Update venue_city seed (CSV)
     """
-    logger = logging.getLogger("cricwh.update")
     select_new_venue_names = f"""
         SELECT venue_name
         FROM {schema}.src_venues
@@ -201,9 +201,7 @@ def update_venue_city_seed(
         FROM {schema}.src_venues
         WHERE venue_name IN %s;
     """
-    conn = None
     try:
-        conn = connect_db()
         with conn.cursor() as cur:
             cur.execute(select_new_venue_names)
             new_venue_names = tuple(venue_name for (venue_name,) in cur.fetchall())
@@ -235,11 +233,11 @@ def update_venue_city_seed(
 def update_city_country_seed(
     venue_city_seed: Path,
     city_country_seed: Path,
+    logger = logging.getLogger("cricwh.update")
     ):
     """
     Update city country seed.
     """
-    logger = logging.getLogger("cricwh.update")
     with open(venue_city_seed, "r") as file:
         reader = csv.reader(file)
         cities = {
