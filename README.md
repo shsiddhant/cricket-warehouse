@@ -6,7 +6,7 @@
 ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-A data warehouse for ball-by-ball cricket match data, designed for analytics and modeling.
+An ETL pipeline to build data warehouse for ball-by-ball cricket match data, designed for analytics and modeling.
 
 The project ingests raw match JSON from [Cricsheet](https://cricsheet.org/), normalizes the data into relational tables in PostgreSQL, and builds analytical models using dbt.
 
@@ -31,6 +31,8 @@ This project builds a reproducible data pipeline that transforms this raw data i
 4. Transform and model data using dbt
 5. Expose analytical tables for queries and downstream models
 
+---
+
 ## Data Source
 
 ### Cricsheet
@@ -45,6 +47,8 @@ Raw dataset characteristics:
 - **Format:** JSON
 - **Granularity:** Ball-by-ball
 - **File structure:**	One file per match
+
+---
 
 ## Architecture
 
@@ -71,6 +75,8 @@ Key design decisions:
 - Transformations are implemented as dbt models
 - venue metadata is managed via seed tables.
 
+---
+
 ## Orchestration (Airflow)
 
 The ingestion pipeline is orchestrated using Apache Airflow running in Docker.
@@ -81,9 +87,11 @@ The ingestion pipeline is orchestrated using Apache Airflow running in Docker.
   - Fetch and extract JSON files from Cricsheet.
   - Batch ingest data into source tables.
 
-Airflow uses a configurable Postgres connection (`cricwh_pg_conn`) configured via environment variables.
+Airflow uses a Postgres connection (`cricwh_pg_conn`) configured via environment variables.
 
 The pipeline is fully containerized and reproducible via Docker Compose.
+
+---
 
 ## Database Model
 
@@ -186,6 +194,8 @@ There are three layers of dbt DAG:
     - `fct_batting_scorecard`: Batting scorecard of each innings.
     - `fct_bowling_scorecard`: Bowling scorecard of each innings.
 
+---
+
 ## Quick Test Dataset
 
 If you want to quickly test the pipeline, you can ingest a small subset of matches from Cricsheet tournament archives.
@@ -219,6 +229,8 @@ Examples:
     cricwh ingest
     dbt build
     ```
+
+---
 
 ## Example Analytical Queries
 
@@ -333,6 +345,7 @@ LIMIT 10;
  CV Varun          |      13 |      17 | 50.0  |   22.53 |    7.66 |  117 |        39.00
 (10 rows)
 ```
+---
 
 ## Installation
 
@@ -345,17 +358,19 @@ LIMIT 10;
 
 There are two ways to run the pipeline: locally or in a docker container, orchestrated with Airflow.
 
+---
+
 ### Running Locally
 
 
-#### Clone the repository
+#### 1. Clone the repository
 
 ```shell
 git clone https://github.com/shsiddhant/cricket-warehouse.git
 cd cricket-warehouse
 ```
 
-#### Create and activate a virtual environment
+#### 2. Create and activate a virtual environment
 
 #### Using `uv`
 
@@ -373,21 +388,20 @@ source .venv/bin/activate
 pip install .
 ```
 
-#### Use CLI to run the pipeline manually.
+#### 3. Use CLI to run the pipeline manually.
 
 See [below](#CLI) on how to use the CLI to run the pipeline.
 
-
+---
 
 ### Run in Docker & Airflow
 
 The full pipeline can be run using Docker Compose.
 
-#### Start services
+#### 1. Start services
 
 ```bash
 docker compose up --build
-
 ```
 
 This will start:
@@ -397,7 +411,7 @@ This will start:
 - Airflow Webserver (UI)
 
 
-#### Access Airflow UI
+#### 2. Access Airflow UI
 
 You can open the UI at [localhost:8080](http://localhost:8080).
 
@@ -410,14 +424,14 @@ You can set credentials in a .env file. Look at the .env.example provided in the
 
 ![Airflow Webserver Log in](assets/log_in.png)
 
-#### Add a Connection
+#### 3. Add a Connection
 
 Before you can run the DAG, you must setup a postgres connection with credentials
 present in the .env files.
 
 ![Add a PostgreSQL connection](assets/add_pg_conn.png)
 
-#### Run the DAG
+#### 4. Run the DAG
 
 Now you can run the Airflow DAG for ingestion.
 
@@ -426,7 +440,7 @@ id as set earlier.
 
 ![Toggle and trigger the DAG](assets/trigger_dag.png)
 
-### Run dbt models
+#### 5. Run dbt models
 
 Until dbt is orchestrated via Airflow and Astronomer Cosmos, models must be run manually inside the container.
 
@@ -437,13 +451,15 @@ dbt debug
 dbt build
 ```
 
-### Access the Warehouse
+#### Access the Warehouse
 
 You can access the warehouse for queries by running the psql in the postgres container:
 
 ```
 docker exec -it cricket-warehouse-postgres-1 psql -U admin -d cricket_warehouse 
 ```
+
+---
 
 ## CLI
 
@@ -497,9 +513,9 @@ Detailed logs are written during each command. The log file may be found at:
 
 ### CLI Workflow
 
-Typical workflow:
+Assuming you've configured your database, a typical workflow goes as follows:
 
-1. Initialize source tables on first run.
+1. Initialize source tables (only on first run)
 
 	```shell
 	cricwh init
@@ -511,44 +527,31 @@ Typical workflow:
     cricwh fetch [URL] [ZIP FILE PATH]
     ```
 
-3. Seed lookup tables.
-
-	```shell
-	dbt seed
-	```
-
-4. Ingest match data into source tables.
+3. Ingest match data into source tables.
 
 	```shell
 	cricwh ingest
 	```
 
-5. Update venue city and city-country lookup seeds.
-
-	```
-	cricwh update --seeds
-	```
-
-6. (Optional) Manually update missing city and country values in seed CSV files.
-7. Run dbt models
+4. Run dbt models
 	```shell
-	dbt build
+	dbt deps --project-dir dbt/
+    dbt build --project-dir dbt/
 	```
 
-The ingestion process tracks processed files using file hashes, ensuring new files are added without duplicating existing data.
-
+---
 
 ## Tools and Libraries
 
-| Tool	      | Purpose                           |
-|-------------|-----------------------------------|
-| Python	  | Data ingestion and CLI tooling    |
-| PostgreSQL  | Data warehouse                    |
-| psycopg2	  | PostgreSQL database interface     |
-| dbt	      | Data modeling and transformations |
+| Tool	        | Purpose                           |
+|---------------|-----------------------------------|
+| Python	    | Data ingestion and CLI tooling    |
+| Apache Airflow | Pipeline Orchestration           |
+| dbt	        | Data modeling and transformations |
+| PostgreSQL    | Data warehouse                    |
+| psycopg2	    | PostgreSQL database interface     |
 
-
-
+---
 
 ## License
 
