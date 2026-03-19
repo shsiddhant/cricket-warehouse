@@ -4,6 +4,9 @@ from typing_extensions import Annotated
 import typer
 import logging
 
+from cricketwarehouse.util import (
+    connect_db
+)
 from cricketwarehouse.cli_util import (
     download_ui,
     ingest_batch,
@@ -78,19 +81,24 @@ def init(
         "cricwh init %s",
         "--seeds" if seeds else ""
     )
-    init_source()
-    print("Source tables initialized.")
-    venue_city = SEEDS_DIR / "venue_city.csv"
-    city_country = SEEDS_DIR / "city_country.csv"
-    if seeds:
-        with open(venue_city, "w") as file:
-            file.write("venue_name,city\n")
-        print("\nInitialized venue city seed.")
-
-        with open(city_country, "w") as file:
-            file.write("city,country\n")
-        print("\nInitialized city country seed.")
-    logger.info("Initialization finished.")
+    try:
+        conn = connect_db()
+        init_source(conn)
+        print("Source tables initialized.")
+        venue_city = SEEDS_DIR / "venue_city.csv"
+        city_country = SEEDS_DIR / "city_country.csv"
+        if seeds:
+            with open(venue_city, "w") as file:
+                file.write("venue_name,city\n")
+            print("\nInitialized venue city seed.")
+            with open(city_country, "w") as file:
+                file.write("city,country\n")
+            print("\nInitialized city country seed.")
+    except Exception as e:
+        print(e)
+        logger.error(e)
+    else:
+        logger.info("Initialization finished.")
 
 @app.command("ingest")
 def ingest_files(
@@ -113,9 +121,19 @@ def ingest_files(
         )
     json_files_list = list(json_files_path.glob("*.json"))
     if schema is not None:
-        ingest_batch(
-            json_files_list, schema, json_table_name="matches_json", batch_size=1000
-        )
+        try:
+            conn = connect_db()
+            ingest_batch(
+                conn, json_files_list, schema, json_table_name="matches_json",
+                batch_size=1000
+            )
+            msg = "Ingested %s files into source tables."
+            n_files = len(json_files_list)
+            print(msg % n_files)
+            logger.info(msg, n_files)
+        except Exception as e:
+            print(e)
+            logger.error(e)
 
 @app.command("update")
 def update_venue_city(
@@ -124,7 +142,7 @@ def update_venue_city(
         ] = False
     ):
     """
-    Update venue city seed.
+    Update dbt seeds.
     """
     custom_logger("cricwh.update")
     logger = logging.getLogger("cricwh.update")
@@ -132,10 +150,19 @@ def update_venue_city(
     if seeds:
         venue_city_seed = SEEDS_DIR / "venue_city.csv"
         city_country_seed = SEEDS_DIR / "city_country.csv"
-        update_venue_city_seed(venue_city_seed)
-        print("\nUpdated venue city seed.")
-        update_city_country_seed(venue_city_seed, city_country_seed)
-        print("\nUpdated city country seed.")
+        try:
+            conn = connect_db()
+            update_venue_city_seed(conn, venue_city_seed)
+            print("\nUpdated venue city seed.")
+            update_city_country_seed(venue_city_seed, city_country_seed)
+            print("\nUpdated city country seed.")
+        except Exception as e:
+            print(e)
+            logger.error(e)
+        else:
+            msg = "Updated dbt seeds"
+            print(msg)
+            logger.info(msg)
 
 if __name__ == "__main__":
     app()

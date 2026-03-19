@@ -8,6 +8,7 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 1
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__WEBSERVER__RATELIMIT_STORAGE_URL: redis://redis:6379/0
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${DB_USER:-admin}:${DB_PASSWORD:-admin}@postgres/${DB_PASSWORD:-admin}
 
     XDG_CACHE_HOME: /opt/airflow/cache
     XDG_CONFIG_HOME: /opt/airflow/config
