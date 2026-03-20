@@ -194,8 +194,26 @@ def cricket_etl():
         profile_config=profile_config,
         default_args={"retries": 0},
     )
-
-    (task_fetch >>task_init >> task_ingest >>
-     task_seed >> task_staging >> task_intermediate) # pyright: ignore[reportUnusedExpression]
+    task_marts = DbtTaskGroup(
+        group_id="marts",
+        project_config=ProjectConfig(
+            dbt_project_path=Path(DBT_PROFILES_DIR).as_posix(),
+        ),
+        render_config=RenderConfig(
+            select=["path:models/marts"],
+            enable_mock_profile=False,
+            test_behavior=TestBehavior.NONE,
+            airflow_vars_to_purge_dbt_ls_cache=["purge"]
+        ),
+        execution_config=shared_execution_config,
+        operator_args={"install_deps": True},
+        profile_config=profile_config,
+        default_args={"retries": 0},
+    )
+    (
+        task_fetch >>task_init >> task_ingest >>
+        task_seed >>
+        task_staging >> task_intermediate >> task_marts
+     ) # pyright: ignore[reportUnusedExpression]
 
 cricket_etl()
