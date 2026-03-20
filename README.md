@@ -168,7 +168,7 @@ Raw dataset characteristics:
 ## Architecture
 
 ```mermaid
-flowchart TD
+flowchart LR
 
 subgraph Airflow DAG
     A[Cricsheet] -->|Fetch and Extract JSON| B[Local Cache]
@@ -458,19 +458,19 @@ The project includes a CLI for managing the ingestion pipeline.
 ```shell
 cricwh --help
 Usage: cricwh [OPTIONS] COMMAND [ARGS]...                                                                                                                                    
-╭─ Options ────────────────────────────────────────────────────────────╮
+╭─ Options ───────────────────────────────────────────────────────────────╮
 │ --install-completion       Install completion for the current shell. │
 │ --show-completion          Show completion for the current shell, to │
 │                            copy it or customize the installation.    │
 │ --help                     Show this message and exit.               │
-╰──────────────────────────────────────────────────────────────────────╯
-╭─ Commands────────────────────────────────────────────────────────────╮
+╰──────────────────────────────────────────────────────────────────────────╯
+╭─ Commands───────────────────────────────────────────────────────────────╮
 │ fetch      Fetch data from Cricsheet.                                │
 │ configure  Configure cricket-warehouse.                              │
 │ init       Initialize source tables and seeds.                       │
 │ ingest     Ingest JSON files into source tables.                     │
 │ update     Update venue city seed.                                   │
-╰──────────────────────────────────────────────────────────────────────╯
+╰──────────────────────────────────────────────────────────────────────────╯
 ```
 
 ### Configuration
