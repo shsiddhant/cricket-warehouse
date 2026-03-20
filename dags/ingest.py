@@ -32,6 +32,10 @@ task_logger = logging.getLogger("airflow.task")
         "postgres_conn_id": Param(
             default="cricwh_pg_conn",
             type="string"
+        ),
+        "reset": Param(
+            default=False,
+            type="boolean",
         )
     },
     tags=["cricwh"]
@@ -64,10 +68,17 @@ def ingest_data():
         Initalialize Source tables.
         """
         ctx = get_current_context()
-        postgres_conn_id = ctx["params"]["postgres_conn_id"] # pyright: ignore[reportTypedDictNotRequiredAccess]
+        postgres_conn_id = ctx["params"]["postgres_conn_id"]    # pyright: ignore[reportTypedDictNotRequiredAccess]
+        reset = ctx["params"]["reset"]   # pyright: ignore[reportTypedDictNotRequiredAccess]
         try:
-            conn = connect_db_airflow(postgres_conn_id)
-            init_source(conn, logger=task_logger)
+            if reset:
+                conn = connect_db_airflow(postgres_conn_id)
+                init_source(conn, logger=task_logger)
+            else:
+                task_logger.info(
+                    "Not resetting source tables. "
+                    "Set reset parameter as True if necessary."
+                )
         except Exception as e:
             task_logger.exception(e)
             raise
@@ -78,7 +89,7 @@ def ingest_data():
         Ingest data from Cricsheet.
         """
         ctx = get_current_context()
-        postgres_conn_id = ctx["params"]["postgres_conn_id"] # pyright: ignore[reportTypedDictNotRequiredAccess]
+        postgres_conn_id = ctx["params"]["postgres_conn_id"]    # pyright: ignore[reportTypedDictNotRequiredAccess]
         json_files_list = list(CACHE_DIR.glob("*.json"))
         task_logger.info("Files: %s", len(json_files_list))
         try:
@@ -99,6 +110,6 @@ def ingest_data():
     task_init = init_source_tables()
     task_ingest = ingest_data_task()
 
-    task_fetch >> task_init >> task_ingest # pyright: ignore[reportUnusedExpression]
+    task_fetch >> task_init >> task_ingest  # pyright: ignore[reportUnusedExpression]
 
 ingest_data()
