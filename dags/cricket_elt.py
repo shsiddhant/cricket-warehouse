@@ -66,9 +66,9 @@ shared_execution_config = ExecutionConfig(
     },
     tags=["cricwh"]
 )
-def cricket_etl():
+def cricket_elt():
     """
-    This is an ETL pipeline for fetching, ingesting, and
+    This is an ELT pipeline for fetching, ingesting, and
     transforming cricsheet ball-by-ball JSON data.
     Tasks:
 
@@ -202,7 +202,7 @@ def cricket_etl():
         render_config=RenderConfig(
             select=["path:models/marts"],
             enable_mock_profile=False,
-            test_behavior=TestBehavior.NONE,
+            test_behavior=TestBehavior.AFTER_ALL,
             airflow_vars_to_purge_dbt_ls_cache=["purge"]
         ),
         execution_config=shared_execution_config,
@@ -216,4 +216,4 @@ def cricket_etl():
         task_staging >> task_intermediate >> task_marts
      ) # pyright: ignore[reportUnusedExpression]
 
-cricket_etl()
+cricket_elt()

@@ -6,9 +6,11 @@
 ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-An ETL pipeline to build data warehouse for ball-by-ball cricket match data, designed for analytics and modeling.
+An ELT pipeline to build data warehouse for ball-by-ball cricket match data, designed for analytics and modeling.
 
 The project ingests raw match JSON from [Cricsheet](https://cricsheet.org/), normalizes the data into relational tables in PostgreSQL, and builds analytical models using dbt.
+
+The pipeline follows an ELT architecture, where raw data is first loaded into the warehouse and transformations are performed using dbt.
 
 ## Overview
 
@@ -30,6 +32,119 @@ This project builds a reproducible data pipeline that transforms this raw data i
 3. Track ingestion state using file hashes for incremental updates
 4. Transform and model data using dbt
 5. Expose analytical tables for queries and downstream models
+
+---
+
+
+## Installation
+
+### Prerequisites
+
+* Python 3.10+
+* PostgreSQL 14+
+* Git
+* Docker (optional)
+
+There are two ways to run the pipeline: locally or in a docker container, orchestrated with Airflow.
+
+---
+
+### Running Locally
+
+
+#### 1. Clone the repository
+
+```shell
+git clone https://github.com/shsiddhant/cricket-warehouse.git
+cd cricket-warehouse
+```
+
+#### 2. Create and activate a virtual environment
+
+#### Using `uv`
+
+```shell
+uv venv .venv --seed
+source .venv/bin/activate
+uv sync
+```
+
+#### Using `pip`
+
+```shell
+python -m venv .venv
+source .venv/bin/activate
+pip install .
+```
+
+#### 3. Use CLI to run the pipeline manually.
+
+See [below](#CLI) on how to use the CLI to run the pipeline.
+
+---
+
+### Run in Airflow
+
+The full pipeline can be run using Docker Compose.
+
+
+#### 1. Clone the repository
+
+```shell
+git clone https://github.com/shsiddhant/cricket-warehouse.git
+cd cricket-warehouse
+```
+
+#### 2. Start services
+
+```bash
+docker compose up --build
+```
+
+This will start:
+
+- PostgreSQL (Data Warehouse)
+- Airflow Scheduler
+- Airflow Webserver (UI)
+
+
+#### 2. Access Airflow UI
+
+You can open the UI at [localhost:8080](http://localhost:8080).
+
+Default credentials:
+
+- username: admin
+- password: admin
+
+You can set credentials in a .env file. Look at the .env.example provided in the repo for variable names.
+
+![Airflow Webserver Log in](assets/log_in.png)
+
+#### 3. Add a Connection
+
+Before you can run the DAG, you must setup a postgres connection with credentials
+present in the .env files.
+
+![Add a PostgreSQL connection](assets/add_pg_conn.png)
+
+#### 4. Run the DAG
+
+Now you can run the Airflow DAG.
+
+Edit the Cricsheet URL as per your needs, and start the DAG. Note that you must use the correct connection
+id as set in the previous step.
+
+![Toggle and trigger the DAG](assets/cricket_elt_dag.png)
+
+
+#### 5. Access the Warehouse
+
+You can access the warehouse for queries by running the psql in the postgres container:
+
+```
+docker exec -it cricket-warehouse-postgres-1 psql -U admin -d cricket_warehouse 
+```
 
 ---
 
@@ -58,7 +173,6 @@ flowchart TD
 subgraph Airflow DAG
     A[Cricsheet] -->|Fetch and Extract JSON| B[Local Cache]
     B -->|Batch Ingestion| C[Source Tables: PostgreSQL]
-end
 
 C -->|dbt| D[Staging Layer: Normalized JSONB]
 
@@ -66,7 +180,10 @@ D -->|dbt| E[Intermediate Layer: Relational Tables]
 
 E -->|dbt| F[Marts: Analytics Tables]
 
+end
 ```
+
+The entire pipeline, including ingestion and transformation, is orchestrated within an Airflow DAG.
 
 Key design decisions:
 
@@ -79,17 +196,26 @@ Key design decisions:
 
 ## Orchestration (Airflow)
 
-The ingestion pipeline is orchestrated using Apache Airflow running in Docker.
+The entire ELT pipeline is orchestrated using Apache Airflow running in Docker.
 
 - Airflow runs with a `LocalExecutor` for parallel task execution
-- The ingestion pipeline is implemented as a DAG (`ingest_data`)
-- Tasks:
-  - Fetch and extract JSON files from Cricsheet.
-  - Batch ingest data into source tables.
+- The pipeline is implemented as a DAG (`cricket_etl`) covering both ingestion and transformation stages
+- Tasks include:
+  - Fetching and extracting JSON data from Cricsheet
+  - Batch ingestion into PostgreSQL source tables
+  - Running dbt transformations within the warehouse
 
-Airflow uses a Postgres connection (`cricwh_pg_conn`) configured via environment variables.
+dbt transformations are executed using **Astronomer Cosmos**, which integrates dbt directly into Airflow DAGs.
 
-The pipeline is fully containerized and reproducible via Docker Compose.
+The DAG is structured into task groups aligned with dbt layers:
+
+- **Staging**
+- **Intermediate**
+- **Marts**
+
+This provides clear visibility into pipeline stages and dependencies within the Airflow UI.
+
+The pipeline is fully automated end-to-end, requiring no manual dbt execution.
 
 ---
 
@@ -205,30 +331,7 @@ Examples:
 - [ICC Women's Cricket World Cup](https://cricsheet.org/downloads/icc_womens_cricket_world_cup_json.zip)
 - [Indian Premier League](https://cricsheet.org/downloads/ipl_json.zip)
 
-### Setup
-
-1. Follow installation instructions [below](#installation).
-
-2. Configure your PostgreSQL database credentials and initialize the schema.
-
-    ```shell
-    cricwh configure
-    cricwh init
-    ```
-
-3. Fetch and extract tournament datasets from cricsheet.
-
-    ```shell
-    cricwh fetch https://cricsheet.org/downloads/icc_womens_cricket_world_cup_json.zip
-    cricwh fetch https://cricsheet.org/downloads/ipl_json.zip
-    ```
-
-4. Ingest match data and build dbt models.
-
-    ```shell
-    cricwh ingest
-    dbt build
-    ```
+Run the pipeline with those URLs to be able to run example queries below.
 
 ---
 
@@ -347,119 +450,6 @@ LIMIT 10;
 ```
 ---
 
-## Installation
-
-### Prerequisites
-
-* Python 3.10+
-* PostgreSQL 14+
-* Git
-* Docker (optional)
-
-There are two ways to run the pipeline: locally or in a docker container, orchestrated with Airflow.
-
----
-
-### Running Locally
-
-
-#### 1. Clone the repository
-
-```shell
-git clone https://github.com/shsiddhant/cricket-warehouse.git
-cd cricket-warehouse
-```
-
-#### 2. Create and activate a virtual environment
-
-#### Using `uv`
-
-```shell
-uv venv .venv --seed
-source .venv/bin/activate
-uv sync
-```
-
-#### Using `pip`
-
-```shell
-python -m venv .venv
-source .venv/bin/activate
-pip install .
-```
-
-#### 3. Use CLI to run the pipeline manually.
-
-See [below](#CLI) on how to use the CLI to run the pipeline.
-
----
-
-### Run in Docker & Airflow
-
-The full pipeline can be run using Docker Compose.
-
-#### 1. Start services
-
-```bash
-docker compose up --build
-```
-
-This will start:
-
-- PostgreSQL (Data Warehouse)
-- Airflow Scheduler
-- Airflow Webserver (UI)
-
-
-#### 2. Access Airflow UI
-
-You can open the UI at [localhost:8080](http://localhost:8080).
-
-Default credentials:
-
-- username: admin
-- password: admin
-
-You can set credentials in a .env file. Look at the .env.example provided in the repo for variable names.
-
-![Airflow Webserver Log in](assets/log_in.png)
-
-#### 3. Add a Connection
-
-Before you can run the DAG, you must setup a postgres connection with credentials
-present in the .env files.
-
-![Add a PostgreSQL connection](assets/add_pg_conn.png)
-
-#### 4. Run the DAG
-
-Now you can run the Airflow DAG for ingestion.
-
-Edit the Cricsheet URL as per your needs, and start the DAG. Note that you must use the correct connection
-id as set earlier.
-
-![Toggle and trigger the DAG](assets/trigger_dag.png)
-
-#### 5. Run dbt models
-
-Until dbt is orchestrated via Airflow and Astronomer Cosmos, models must be run manually inside the container.
-
-```shell
-docker exec -it <airflow-container> bash
-cd dbt
-dbt debug
-dbt build
-```
-
-#### Access the Warehouse
-
-You can access the warehouse for queries by running the psql in the postgres container:
-
-```
-docker exec -it cricket-warehouse-postgres-1 psql -U admin -d cricket_warehouse 
-```
-
----
 
 ## CLI
 
@@ -543,13 +533,14 @@ Assuming you've configured your database, a typical workflow goes as follows:
 
 ## Tools and Libraries
 
-| Tool	        | Purpose                           |
-|---------------|-----------------------------------|
-| Python	    | Data ingestion and CLI tooling    |
-| Apache Airflow | Pipeline Orchestration           |
-| dbt	        | Data modeling and transformations |
-| PostgreSQL    | Data warehouse                    |
-| psycopg2	    | PostgreSQL database interface     |
+| Tool	            | Purpose                           |
+|-------------------|-----------------------------------|
+| Python	        | Data ingestion and CLI tooling    |
+| Apache Airflow    | Pipeline Orchestration            |
+| dbt	            | Data modeling and transformations |
+| PostgreSQL        | Data warehouse                    |
+| Astronomer Cosmos | ELT Pipeline Orchestration        |
+| psycopg2	        | PostgreSQL database interface     |
 
 ---
 
