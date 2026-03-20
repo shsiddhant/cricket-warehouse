@@ -10,6 +10,15 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "aenum"
+version = "3.1.16"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/09/7a/61ed58e8be9e30c3fe518899cc78c284896d246d51381bab59b5db11e1f3/aenum-3.1.16.tar.gz", hash = "sha256:bfaf9589bdb418ee3a986d85750c7318d9d2839c1b1a1d6fe8fc53ec201cf140", size = 137693, upload-time = "2026-01-12T22:34:38.819Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e3/52/6ad8f63ec8da1bf40f96996d25d5b650fdd38f5975f8c813732c47388f18/aenum-3.1.16-py3-none-any.whl", hash = "sha256:9035092855a98e41b66e3d0998bd7b96280e85ceb3a04cc035636138a1943eaf", size = 165627, upload-time = "2025-04-25T03:17:58.89Z" },
+]
+
+[[package]]
 name = "agate"
 version = "1.9.1"
 source = { registry = "https://pypi.org/simple" }
@@ -471,6 +480,27 @@ wheels = [
 ]
 
 [[package]]
+name = "astronomer-cosmos"
+version = "1.13.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aenum" },
+    { name = "apache-airflow" },
+    { name = "attrs" },
+    { name = "deprecation" },
+    { name = "jinja2" },
+    { name = "msgpack" },
+    { name = "openlineage-integration-common" },
+    { name = "packaging" },
+    { name = "pydantic" },
+    { name = "virtualenv" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1a/a3/5e441fb994efe9ccc88ba8c2b89da724bf24e24f0e97a1ce7e535a9e4a01/astronomer_cosmos-1.13.1.tar.gz", hash = "sha256:e46ffa7a65c4744741f6aca4790db8979f077b9ba8e751b5f8b993a52295fc4e", size = 146414, upload-time = "2026-02-25T12:23:12.558Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f7/1d/362687f9ab924801e16ceacc2a7751ad95c60926435e8028ccc17e8bd9ab/astronomer_cosmos-1.13.1-py3-none-any.whl", hash = "sha256:5a4869792c304410ce04fdadcf85cf85dfc14415c695a000b608917d3acc8c33", size = 204220, upload-time = "2026-02-25T12:23:10.67Z" },
+]
+
+[[package]]
 name = "asttokens"
 version = "3.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -859,6 +889,7 @@ source = { editable = "." }
 dependencies = [
     { name = "apache-airflow" },
     { name = "apache-airflow-providers-postgres" },
+    { name = "astronomer-cosmos" },
     { name = "dbt-core" },
     { name = "dbt-postgres" },
     { name = "platformdirs" },
@@ -889,6 +920,7 @@ dev = [
 requires-dist = [
     { name = "apache-airflow", specifier = "==2.9.3" },
     { name = "apache-airflow-providers-postgres", specifier = ">=6.1.3" },
+    { name = "astronomer-cosmos", specifier = ">=1.13.1" },
     { name = "dbt-core", specifier = ">=1.11.7" },
     { name = "dbt-core", marker = "extra == 'dev'", specifier = ">=1.11.7" },
     { name = "dbt-postgres", specifier = ">=1.10.0" },
@@ -1180,6 +1212,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/49/85/12f0a49a7c4ffb70572b6c2ef13c90c88fd190debda93b23f026b25f9634/deprecated-1.3.1.tar.gz", hash = "sha256:b1b50e0ff0c1fddaa5708a2c6b0a6588bb09b892825ab2b214ac9ea9d92a5223", size = 2932523, upload-time = "2025-10-30T08:19:02.757Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/84/d0/205d54408c08b13550c733c4b85429e7ead111c7f0014309637425520a9a/deprecated-1.3.1-py2.py3-none-any.whl", hash = "sha256:597bfef186b6f60181535a29fbe44865ce137a5079f295b479886c82729d5f3f", size = 11298, upload-time = "2025-10-30T08:19:00.758Z" },
+]
+
+[[package]]
+name = "deprecation"
+version = "2.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5a/d3/8ae2869247df154b64c1884d7346d412fed0c49df84db635aab2d1c40e62/deprecation-2.1.0.tar.gz", hash = "sha256:72b3bde64e5d778694b0cf68178aed03d15e15477116add3fb773e581f9518ff", size = 173788, upload-time = "2020-04-20T14:23:38.738Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/02/c3/253a89ee03fc9b9682f1541728eb66db7db22148cd94f89ab22528cd1e1b/deprecation-2.1.0-py2.py3-none-any.whl", hash = "sha256:a10811591210e1fb0e768a8c25517cabeabcba6f0bf96564f8ff45189f90b14a", size = 11178, upload-time = "2020-04-20T14:23:36.581Z" },
 ]
 
 [[package]]
@@ -2827,6 +2871,47 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/58/ad/1100d7229bb248394939a12a8074d485b655e8ed44207d328fdd7fcebc7b/numpy-2.4.3-pp311-pypy311_pp73-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:7e58765ad74dcebd3ef0208a5078fba32dc8ec3578fe84a604432950cd043d79", size = 15800434, upload-time = "2026-03-09T07:58:44.837Z" },
     { url = "https://files.pythonhosted.org/packages/0c/fd/16d710c085d28ba4feaf29ac60c936c9d662e390344f94a6beaa2ac9899b/numpy-2.4.3-pp311-pypy311_pp73-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:8e236dbda4e1d319d681afcbb136c0c4a8e0f1a5c58ceec2adebb547357fe857", size = 16729409, upload-time = "2026-03-09T07:58:47.972Z" },
     { url = "https://files.pythonhosted.org/packages/57/a7/b35835e278c18b85206834b3aa3abe68e77a98769c59233d1f6300284781/numpy-2.4.3-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:4b42639cdde6d24e732ff823a3fa5b701d8acad89c4142bc1d0bd6dc85200ba5", size = 12504685, upload-time = "2026-03-09T07:58:50.525Z" },
+]
+
+[[package]]
+name = "openlineage-integration-common"
+version = "1.45.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "attrs" },
+    { name = "openlineage-python" },
+    { name = "openlineage-sql" },
+    { name = "pyyaml" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c6/66/ee30f0b1c7101ab62bdef5332d29f4203cf903adc01276c636ce9726e8d1/openlineage_integration_common-1.45.0-py3-none-any.whl", hash = "sha256:0338ace651697b2185b306a9987f742285e3fa94607d4fabebf7d57dd47c8d43", size = 57827, upload-time = "2026-03-11T15:40:05.073Z" },
+]
+
+[[package]]
+name = "openlineage-python"
+version = "1.45.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "attrs" },
+    { name = "httpx" },
+    { name = "packaging" },
+    { name = "python-dateutil" },
+    { name = "pyyaml" },
+    { name = "requests" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d2/9e/a3918a9d7ed883c744119269b1477489ccbe25d04cf90e193b006d1ba5e4/openlineage_python-1.45.0-py3-none-any.whl", hash = "sha256:cf66e7d517d3c8b510b39ad646d8fd0ca2f0cc92d7d6d601d93b2a859783f380", size = 103592, upload-time = "2026-03-11T15:40:06.556Z" },
+]
+
+[[package]]
+name = "openlineage-sql"
+version = "1.45.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/17/5b/766d294e699871c4c831ee4741e81ecf2b03affe761bb7803233259cb654/openlineage_sql-1.45.0.tar.gz", hash = "sha256:a6707a3b604b028a4350e7fe703360852a777d4d54ac8b1fa0e7873a5ed2227a", size = 40389, upload-time = "2026-03-11T15:40:12.266Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1d/f0/50afa3f02b28af18974fe8ecf17f9382c50c4cee557f38823240e3a3c9e5/openlineage_sql-1.45.0-cp39-abi3-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:a9ee32250f051433cd63ad38afa4156781f92b893a8bd0ce0b15036ccedcc4d3", size = 4895465, upload-time = "2026-03-11T15:40:08.26Z" },
+    { url = "https://files.pythonhosted.org/packages/9a/14/6724b3948f58dcd80bf1a0b68927680de0ee2fa71a3349262b36e4b52540/openlineage_sql-1.45.0-cp39-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:5dfb07b2ec7e89363ebac65b35b5ad5e0368d84669f156652b348b1993ae4346", size = 2446317, upload-time = "2026-03-11T15:40:09.931Z" },
+    { url = "https://files.pythonhosted.org/packages/10/6f/1d167ed8d2254c7a650aa4729390b54da3f92639dd7f5addaddf3df1a7a8/openlineage_sql-1.45.0-cp39-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:44612c3632f614cdee9d46b2c889453bd04d95c82764d75df6667bc90ff3cf40", size = 2611656, upload-time = "2026-03-11T15:40:11.01Z" },
 ]
 
 [[package]]
